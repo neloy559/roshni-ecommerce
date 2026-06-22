@@ -1,0 +1,795 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useRef, useCallback } from 'react';
+     4→import { useAppStore } from '@/lib/store';
+     5→import { ProductCard } from './HomePage';
+     6→import {
+     7→  SlidersHorizontal, X, Clock, TrendingUp, Flame, ChevronDown,
+     8→  ChevronRight, Home, Grid2X2, Grid3X3, LayoutGrid, Tag,
+     9→  PackageOpen, ArrowLeft, Check, SearchX, Sparkles,
+    10→} from 'lucide-react';
+    11→import { Button } from '@/components/ui/button';
+    12→import { Input } from '@/components/ui/input';
+    13→import { Badge } from '@/components/ui/badge';
+    14→import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+    15→import { Slider } from '@/components/ui/slider';
+    16→import { Separator } from '@/components/ui/separator';
+    17→import { Skeleton } from '@/components/ui/skeleton';
+    18→import { cn } from '@/lib/utils';
+    19→import { motion, AnimatePresence } from 'framer-motion';
+    20→import type { Product } from './HomePage';
+    21→
+    22→// ─── Types ────────────────────────────────────────────────────────────────────
+    23→interface Category {
+    24→  id: string; name: string; slug: string;
+    25→  children: Array<{ id: string; name: string; slug: string }>;
+    26→  productCount?: number;
+    27→}
+    28→
+    29→type GridCols = 2 | 3 | 4;
+    30→type SortOption = 'newest' | 'popular' | 'price-asc' | 'price-desc';
+    31→
+    32→// ─── FilterSidebar (separate named component) ────────────────────────────────
+    33→function FilterSidebar({
+    34→  categories, category, setCategory, sale, setSale,
+    35→  priceRange, setPriceRange, sort, setSort,
+    36→  hasFilters, clearFilters, totalProducts,
+    37→}: {
+    38→  categories: Category[];
+    39→  category: string;
+    40→  setCategory: (c: string) => void;
+    41→  sale: boolean;
+    42→  setSale: (s: boolean) => void;
+    43→  priceRange: [number, number];
+    44→  setPriceRange: (r: [number, number]) => void;
+    45→  sort: SortOption;
+    46→  setSort: (s: SortOption) => void;
+    47→  hasFilters: boolean;
+    48→  clearFilters: () => void;
+    49→  totalProducts: number;
+    50→}) {
+    51→  const [localRange, setLocalRange] = useState<[number, number]>(priceRange);
+    52→  const [priceDirty, setPriceDirty] = useState(false);
+    53→
+    54→  const applyPrice = () => {
+    55→    setPriceRange(localRange);
+    56→    setPriceDirty(false);
+    57→  };
+    58→
+    59→  return (
+    60→    <div className="space-y-6">
+    61→      {/* Sort By */}
+    62→      <div>
+    63→        <div className="flex items-center gap-2 mb-3">
+    64→          <Clock className="h-4 w-4 text-muted-foreground" />
+    65→          <h4 className="text-sm font-semibold">Sort By</h4>
+    66→        </div>
+    67→        <div className="space-y-1">
+    68→          {([
+    69→            { value: 'newest' as SortOption, label: 'Newest', icon: Clock },
+    70→            { value: 'popular' as SortOption, label: 'Popular', icon: Flame },
+    71→            { value: 'price-asc' as SortOption, label: 'Price: Low → High', icon: TrendingUp },
+    72→            { value: 'price-desc' as SortOption, label: 'Price: High → Low', icon: TrendingUp },
+    73→          ] as const).map(opt => (
+    74→            <button
+    75→              key={opt.value}
+    76→              onClick={() => setSort(opt.value)}
+    77→              className={cn(
+    78→                'w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center gap-2.5',
+    79→                sort === opt.value
+    80→                  ? 'bg-primary/10 text-primary font-medium shadow-sm'
+    81→                  : 'hover:bg-accent text-muted-foreground hover:text-foreground',
+    82→              )}
+    83→            >
+    84→              <opt.icon className={cn('h-3.5 w-3.5', sort === opt.value ? 'text-primary' : 'text-muted-foreground/60')} />
+    85→              <span className="flex-1">{opt.label}</span>
+    86→              {sort === opt.value && <Check className="h-3.5 w-3.5 text-primary" />}
+    87→            </button>
+    88→          ))}
+    89→        </div>
+    90→      </div>
+    91→
+    92→      <Separator />
+    93→
+    94→      {/* Categories */}
+    95→      <div>
+    96→        <div className="flex items-center gap-2 mb-3">
+    97→          <Grid3X3 className="h-4 w-4 text-muted-foreground" />
+    98→          <h4 className="text-sm font-semibold">Categories</h4>
+    99→        </div>
+   100→        <div className="space-y-1">
+   101→          <button
+   102→            onClick={() => setCategory('')}
+   103→            className={cn(
+   104→              'w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group',
+   105→              !category ? 'bg-primary/10 text-primary font-medium shadow-sm' : 'hover:bg-accent text-muted-foreground hover:text-foreground',
+   106→            )}
+   107→          >
+   108→            <span>All Products</span>
+   109→            {totalProducts > 0 && (
+   110→              <span className={cn('text-xs px-2 py-0.5 rounded-full', !category ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground')}>
+   111→                {totalProducts}
+   112→              </span>
+   113→            )}
+   114→          </button>
+   115→          {categories.map(c => (
+   116→            <button
+   117→              key={c.id}
+   118→              onClick={() => setCategory(c.slug)}
+   119→              className={cn(
+   120→                'w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200 flex items-center justify-between group',
+   121→                category === c.slug ? 'bg-primary/10 text-primary font-medium shadow-sm' : 'hover:bg-accent text-muted-foreground hover:text-foreground',
+   122→              )}
+   123→            >
+   124→              <span>{c.name}</span>
+   125→              {c.productCount !== undefined && (
+   126→                <span className={cn('text-xs px-2 py-0.5 rounded-full', category === c.slug ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground')}>
+   127→                  {c.productCount}
+   128→                </span>
+   129→              )}
+   130→            </button>
+   131→          ))}
+   132→        </div>
+   133→      </div>
+   134→
+   135→      <Separator />
+   136→
+   137→      {/* Price Range */}
+   138→      <div>
+   139→        <div className="flex items-center gap-2 mb-3">
+   140→          <Tag className="h-4 w-4 text-muted-foreground" />
+   141→          <h4 className="text-sm font-semibold">Price Range</h4>
+   142→        </div>
+   143→        <Slider
+   144→          min={0} max={10000} step={500}
+   145→          value={localRange}
+   146→          onValueChange={(v) => { setLocalRange(v as [number, number]); setPriceDirty(true); }}
+   147→          className="mb-3"
+   148→        />
+   149→        <div className="flex items-center justify-between mb-3">
+   150→          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-muted text-foreground">
+   151→            ৳{localRange[0].toLocaleString()}
+   152→          </span>
+   153→          <span className="text-muted-foreground text-xs">—</span>
+   154→          <span className="text-xs font-medium px-2.5 py-1 rounded-md bg-muted text-foreground">
+   155→            ৳{localRange[1].toLocaleString()}
+   156→          </span>
+   157→        </div>
+   158→        {priceDirty && (
+   159→          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}>
+   160→            <Button size="sm" className="w-full rounded-lg" onClick={applyPrice}>
+   161→              Apply Price Range
+   162→            </Button>
+   163→          </motion.div>
+   164→        )}
+   165→      </div>
+   166→
+   167→      <Separator />
+   168→
+   169→      {/* On Sale Toggle */}
+   170→      <div>
+   171→        <button
+   172→          onClick={() => setSale(!sale)}
+   173→          className="flex items-center gap-3 w-full text-sm group"
+   174→        >
+   175→          <div className={cn(
+   176→            'h-5 w-5 rounded-md border-2 flex items-center justify-center transition-all duration-200 flex-shrink-0',
+   177→            sale
+   178→              ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+   179→              : 'border-muted-foreground/30 group-hover:border-primary/50',
+   180→          )}>
+   181→            {sale && (
+   182→              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 20 }}>
+   183→                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+   184→                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+   185→                </svg>
+   186→              </motion.div>
+   187→            )}
+   188→          </div>
+   189→          <span className={cn('transition-colors', sale ? 'text-primary font-medium' : 'text-foreground')}>
+   190→            On Sale
+   191→          </span>
+   192→          {sale && (
+   193→            <Badge variant="secondary" className="ml-auto text-xs bg-primary/10 text-primary border-0">
+   194→              Sale
+   195→            </Badge>
+   196→          )}
+   197→        </button>
+   198→      </div>
+   199→
+   200→      {/* Clear All Filters */}
+   201→      <AnimatePresence>
+   202→        {hasFilters && (
+   203→          <motion.div
+   204→            initial={{ opacity: 0, height: 0 }}
+   205→            animate={{ opacity: 1, height: 'auto' }}
+   206→            exit={{ opacity: 0, height: 0 }}
+   207→            transition={{ duration: 0.2 }}
+   208→          >
+   209→            <Button
+   210→              variant="outline"
+   211→              size="sm"
+   212→              className="w-full rounded-full border-dashed hover:border-solid hover:bg-destructive/5 hover:text-destructive hover:border-destructive/30 transition-all"
+   213→              onClick={clearFilters}
+   214→            >
+   215→              <X className="h-3.5 w-3.5 mr-1.5" />
+   216→              Clear All Filters
+   217→            </Button>
+   218→          </motion.div>
+   219→        )}
+   220→      </AnimatePresence>
+   221→    </div>
+   222→  );
+   223→}
+   224→
+   225→// ─── SortDropdown (custom button + absolute positioned menu) ──────────────────
+   226→function SortDropdown({ sort, setSort }: { sort: SortOption; setSort: (s: SortOption) => void }) {
+   227→  const [open, setOpen] = useState(false);
+   228→  const ref = useRef<HTMLDivElement>(null);
+   229→
+   230→  const options: { value: SortOption; label: string; icon: React.ElementType }[] = [
+   231→    { value: 'newest', label: 'Newest', icon: Clock },
+   232→    { value: 'popular', label: 'Popular', icon: Flame },
+   233→    { value: 'price-asc', label: 'Price: Low → High', icon: TrendingUp },
+   234→    { value: 'price-desc', label: 'Price: High → Low', icon: TrendingUp },
+   235→  ];
+   236→
+   237→  const current = options.find(o => o.value === sort) || options[0];
+   238→
+   239→  useEffect(() => {
+   240→    function handleClick(e: MouseEvent) {
+   241→      if (ref.current && !ref.current.contains(e.target as Node)) {
+   242→        setOpen(false);
+   243→      }
+   244→    }
+   245→    if (open) document.addEventListener('mousedown', handleClick);
+   246→    return () => document.removeEventListener('mousedown', handleClick);
+   247→  }, [open]);
+   248→
+   249→  return (
+   250→    <div className="relative" ref={ref}>
+   251→      <button
+   252→        onClick={() => setOpen(!open)}
+   253→        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm hover:bg-accent transition-colors bg-background"
+   254→      >
+   255→        <current.icon className="h-4 w-4 text-muted-foreground" />
+   256→        <span className="hidden sm:inline">{current.label}</span>
+   257→        <span className="sm:hidden">Sort</span>
+   258→        {sort === 'popular' && <Flame className="h-3.5 w-3.5 text-orange-500" />}
+   259→        <ChevronDown className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform duration-200', open && 'rotate-180')} />
+   260→      </button>
+   261→
+   262→      <AnimatePresence>
+   263→        {open && (
+   264→          <motion.div
+   265→            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+   266→            animate={{ opacity: 1, y: 0, scale: 1 }}
+   267→            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+   268→            transition={{ duration: 0.15 }}
+   269→            className="absolute right-0 top-full mt-1 w-52 bg-popover border rounded-xl shadow-lg z-50 overflow-hidden"
+   270→          >
+   271→            {options.map(opt => (
+   272→              <button
+   273→                key={opt.value}
+   274→                onClick={() => { setSort(opt.value); setOpen(false); }}
+   275→                className={cn(
+   276→                  'w-full text-left px-3.5 py-2.5 text-sm flex items-center gap-2.5 transition-colors',
+   277→                  sort === opt.value
+   278→                    ? 'bg-primary/10 text-primary font-medium'
+   279→                    : 'hover:bg-accent text-foreground',
+   280→                )}
+   281→              >
+   282→                <opt.icon className={cn('h-4 w-4', sort === opt.value ? 'text-primary' : 'text-muted-foreground')} />
+   283→                <span className="flex-1">{opt.label}</span>
+   284→                {sort === opt.value && <Check className="h-3.5 w-3.5 text-primary" />}
+   285→              </button>
+   286→            ))}
+   287→          </motion.div>
+   288→        )}
+   289→      </AnimatePresence>
+   290→    </div>
+   291→  );
+   292→}
+   293→
+   294→// ─── Grid View Toggle ─────────────────────────────────────────────────────────
+   295→function GridViewToggle({ cols, setCols }: { cols: GridCols; setCols: (c: GridCols) => void }) {
+   296→  const options: { value: GridCols; icon: React.ElementType; label: string }[] = [
+   297→    { value: 2, icon: Grid2X2, label: '2 cols' },
+   298→    { value: 3, icon: Grid3X3, label: '3 cols' },
+   299→    { value: 4, icon: LayoutGrid, label: '4 cols' },
+   300→  ];
+   301→
+   302→  return (
+   303→    <div className="hidden md:flex items-center gap-0.5 rounded-lg border p-0.5 bg-background">
+   304→      {options.map(opt => (
+   305→        <button
+   306→          key={opt.value}
+   307→          onClick={() => setCols(opt.value)}
+   308→          title={opt.label}
+   309→          className={cn(
+   310→            'p-1.5 rounded-md transition-all duration-200',
+   311→            cols === opt.value
+   312→              ? 'bg-primary text-primary-foreground shadow-sm'
+   313→              : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+   314→          )}
+   315→        >
+   316→          <opt.icon className="h-3.5 w-3.5" />
+   317→        </button>
+   318→      ))}
+   319→    </div>
+   320→  );
+   321→}
+   322→
+   323→// ─── Active Filter Chips ──────────────────────────────────────────────────────
+   324→function ActiveFilterChips({
+   325→  category, categories, setCategory, sale, setSale,
+   326→  priceRange, setPriceRange, search, setSearch,
+   327→}: {
+   328→  category: string;
+   329→  categories: Category[];
+   330→  setCategory: (c: string) => void;
+   331→  sale: boolean;
+   332→  setSale: (s: boolean) => void;
+   333→  priceRange: [number, number];
+   334→  setPriceRange: (r: [number, number]) => void;
+   335→  search: string;
+   336→  setSearch: (s: string) => void;
+   337→}) {
+   338→  const categoryName = category ? categories.find(c => c.slug === category)?.name || category : '';
+   339→  const priceCustom = priceRange[0] > 0 || priceRange[1] < 10000;
+   340→
+   341→  if (!category && !sale && !priceCustom && !search) return null;
+   342→
+   343→  return (
+   344→    <AnimatePresence mode="wait">
+   345→      <motion.div
+   346→        initial={{ opacity: 0 }}
+   347→        animate={{ opacity: 1 }}
+   348→        exit={{ opacity: 0 }}
+   349→        className="flex flex-wrap gap-2 mb-4"
+   350→      >
+   351→        {search && (
+   352→          <motion.span
+   353→            initial={{ opacity: 0, scale: 0.9 }}
+   354→            animate={{ opacity: 1, scale: 1 }}
+   355→            exit={{ opacity: 0, scale: 0.9 }}
+   356→          >
+   357→            <Badge
+   358→              variant="secondary"
+   359→              className="rounded-full gap-1.5 pl-3 pr-2 py-1 cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors text-xs font-normal"
+   360→              onClick={() => setSearch('')}
+   361→            >
+   362→              <SearchX className="h-3 w-3 mr-0.5" />
+   363→              &quot;{search}&quot;
+   364→              <button className="ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+   365→                <X className="h-3 w-3" />
+   366→              </button>
+   367→            </Badge>
+   368→          </motion.span>
+   369→        )}
+   370→        {categoryName && (
+   371→          <motion.span
+   372→            initial={{ opacity: 0, scale: 0.9 }}
+   373→            animate={{ opacity: 1, scale: 1 }}
+   374→            exit={{ opacity: 0, scale: 0.9 }}
+   375→          >
+   376→            <Badge
+   377→              variant="secondary"
+   378→              className="rounded-full gap-1.5 pl-3 pr-2 py-1 cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors text-xs font-normal"
+   379→              onClick={() => setCategory('')}
+   380→            >
+   381→              <Grid3X3 className="h-3 w-3 mr-0.5" />
+   382→              {categoryName}
+   383→              <button className="ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+   384→                <X className="h-3 w-3" />
+   385→              </button>
+   386→            </Badge>
+   387→          </motion.span>
+   388→        )}
+   389→        {priceCustom && (
+   390→          <motion.span
+   391→            initial={{ opacity: 0, scale: 0.9 }}
+   392→            animate={{ opacity: 1, scale: 1 }}
+   393→            exit={{ opacity: 0, scale: 0.9 }}
+   394→          >
+   395→            <Badge
+   396→              variant="secondary"
+   397→              className="rounded-full gap-1.5 pl-3 pr-2 py-1 cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors text-xs font-normal"
+   398→              onClick={() => setPriceRange([0, 10000])}
+   399→            >
+   400→              <Tag className="h-3 w-3 mr-0.5" />
+   401→              ৳{priceRange[0].toLocaleString()} – ৳{priceRange[1].toLocaleString()}
+   402→              <button className="ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+   403→                <X className="h-3 w-3" />
+   404→              </button>
+   405→            </Badge>
+   406→          </motion.span>
+   407→        )}
+   408→        {sale && (
+   409→          <motion.span
+   410→            initial={{ opacity: 0, scale: 0.9 }}
+   411→            animate={{ opacity: 1, scale: 1 }}
+   412→            exit={{ opacity: 0, scale: 0.9 }}
+   413→          >
+   414→            <Badge
+   415→              variant="secondary"
+   416→              className="rounded-full gap-1.5 pl-3 pr-2 py-1 cursor-pointer hover:bg-destructive/10 hover:text-destructive transition-colors text-xs font-normal"
+   417→              onClick={() => setSale(false)}
+   418→            >
+   419→              <Sparkles className="h-3 w-3 mr-0.5" />
+   420→              On Sale
+   421→              <button className="ml-0.5 rounded-full p-0.5 hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+   422→                <X className="h-3 w-3" />
+   423→              </button>
+   424→            </Badge>
+   425→          </motion.span>
+   426→        )}
+   427→      </motion.div>
+   428→    </AnimatePresence>
+   429→  );
+   430→}
+   431→
+   432→// ─── Enhanced Empty State ─────────────────────────────────────────────────────
+   433→function EmptyState({ clearFilters, browseAll }: { clearFilters: () => void; browseAll: () => void }) {
+   434→  return (
+   435→    <motion.div
+   436→      initial={{ opacity: 0, y: 12 }}
+   437→      animate={{ opacity: 1, y: 0 }}
+   438→      transition={{ duration: 0.4 }}
+   439→      className="flex flex-col items-center justify-center py-16 sm:py-24 px-4"
+   440→    >
+   441→      {/* Subtle background pattern */}
+   442→      <div className="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl opacity-[0.03]"
+   443→        style={{
+   444→          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+   445→          backgroundSize: '24px 24px',
+   446→        }}
+   447→      />
+   448→
+   449→      {/* Icon */}
+   450→      <div className="relative mb-6">
+   451→        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-muted flex items-center justify-center">
+   452→          <PackageOpen className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground/50" />
+   453→        </div>
+   454→        <div className="absolute -top-1 -right-1 w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+   455→          <SearchX className="h-4 w-4 text-primary/60" />
+   456→        </div>
+   457→      </div>
+   458→
+   459→      <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-2">No products found</h3>
+   460→      <p className="text-sm sm:text-base text-muted-foreground text-center max-w-sm mb-2">
+   461→        We couldn&apos;t find any products matching your current filters.
+   462→      </p>
+   463→      <p className="text-xs text-muted-foreground/70 text-center max-w-xs mb-8">
+   464→        Try removing some filters, adjusting the price range, or searching with different keywords.
+   465→      </p>
+   466→
+   467→      <div className="flex flex-col sm:flex-row gap-3">
+   468→        <Button
+   469→          variant="outline"
+   470→          className="rounded-full px-6 gap-2"
+   471→          onClick={clearFilters}
+   472→        >
+   473→          <X className="h-4 w-4" />
+   474→          Clear Filters
+   475→        </Button>
+   476→        <Button
+   477→          className="rounded-full px-6 gap-2"
+   478→          onClick={browseAll}
+   479→        >
+   480→          <Sparkles className="h-4 w-4" />
+   481→          Browse All Products
+   482→        </Button>
+   483→      </div>
+   484→    </motion.div>
+   485→  );
+   486→}
+   487→
+   488→// ─── Enhanced Skeleton Row ────────────────────────────────────────────────────
+   489→function EnhancedSkeletonGrid({ cols }: { cols: GridCols }) {
+   490→  const colClass = {
+   491→    2: 'grid-cols-2',
+   492→    3: 'md:grid-cols-3 grid-cols-2',
+   493→    4: 'md:grid-cols-4 grid-cols-2',
+   494→  }[cols];
+   495→
+   496→  return (
+   497→    <div className={cn('grid gap-3 sm:gap-4', colClass)}>
+   498→      {Array.from({ length: cols === 4 ? 8 : 6 }).map((_, i) => (
+   499→        <div key={i} className="space-y-2.5">
+   500→          <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+   501→          <Skeleton className="h-3.5 w-4/5 rounded" />
+   502→          <Skeleton className="h-3.5 w-1/3 rounded" />
+   503→          <Skeleton className="h-3 w-1/2 rounded" />
+   504→        </div>
+   505→      ))}
+   506→    </div>
+   507→  );
+   508→}
+   509→
+   510→// ─── Main ProductsPage ───────────────────────────────────────────────────────
+   511→export function ProductsPage() {
+   512→  const { pageParams, navigate } = useAppStore();
+   513→  const [products, setProducts] = useState<Product[]>([]);
+   514→  const [categories, setCategories] = useState<Category[]>([]);
+   515→  const [total, setTotal] = useState(0);
+   516→  const [loading, setLoading] = useState(true);
+   517→  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+   518→  const [gridCols, setGridCols] = useState<GridCols>(4);
+   519→
+   520→  const [search, setSearch] = useState(pageParams.search || '');
+   521→  const [category, setCategory] = useState(pageParams.category || '');
+   522→  const [sort, setSort] = useState<SortOption>((pageParams.sort || 'newest') as SortOption);
+   523→  const [sale, setSale] = useState(pageParams.sale === 'true');
+   524→  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
+   525→
+   526→  // Fetch products
+   527→  useEffect(() => {
+   528→    let cancelled = false;
+   529→    const controller = new AbortController();
+   530→
+   531→    async function load() {
+   532→      if (cancelled) return;
+   533→      setLoading(true);
+   534→      const params = new URLSearchParams();
+   535→      if (category) params.set('category', category);
+   536→      if (search) params.set('search', search);
+   537→      if (sort) params.set('sort', sort);
+   538→      if (sale) params.set('sale', 'true');
+   539→      if (priceRange[0] > 0) params.set('minPrice', String(priceRange[0]));
+   540→      if (priceRange[1] < 10000) params.set('maxPrice', String(priceRange[1]));
+   541→      params.set('limit', '50');
+   542→
+   543→      try {
+   544→        const res = await fetch(`/api/products?${params}`, { signal: controller.signal });
+   545→        const data = await res.json();
+   546→        if (!cancelled) {
+   547→          setProducts(data.products || []);
+   548→          setTotal(data.total || 0);
+   549→          setLoading(false);
+   550→        }
+   551→      } catch {
+   552→        if (!cancelled) setLoading(false);
+   553→      }
+   554→    }
+   555→
+   556→    load();
+   557→    return () => { cancelled = true; controller.abort(); };
+   558→  }, [category, search, sort, sale, priceRange]);
+   559→
+   560→  // Fetch categories
+   561→  useEffect(() => {
+   562→    let cancelled = false;
+   563→    fetch('/api/categories')
+   564→      .then(r => r.json())
+   565→      .then(d => { if (!cancelled) setCategories(d); })
+   566→      .catch(() => {});
+   567→    return () => { cancelled = true; };
+   568→  }, []);
+   569→
+   570→  const [filterResetKey, setFilterResetKey] = useState(0);
+   571→
+   572→  const clearFilters = useCallback(() => {
+   573→    setCategory('');
+   574→    setSearch('');
+   575→    setSort('newest');
+   576→    setSale(false);
+   577→    setPriceRange([0, 10000]);
+   578→    setFilterResetKey(k => k + 1);
+   579→  }, []);
+   580→
+   581→  const browseAll = useCallback(() => {
+   582→    clearFilters();
+   583→  }, [clearFilters]);
+   584→
+   585→  const hasFilters = !!(category || search || sale || priceRange[0] > 0 || priceRange[1] < 10000);
+   586→  const categoryName = category ? categories.find(c => c.slug === category)?.name || '' : '';
+   587→
+   588→  const filterProps = {
+   589→    categories, category, setCategory, sale, setSale,
+   590→    priceRange, setPriceRange, sort, setSort,
+   591→    hasFilters, clearFilters, totalProducts: total,
+   592→  };
+   593→
+   594→  const gridColClass = {
+   595→    2: 'grid-cols-2 sm:grid-cols-2',
+   596→    3: 'grid-cols-2 sm:grid-cols-3',
+   597→    4: 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+   598→  }[gridCols];
+   599→
+   600→  return (
+   601→    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+   602→      {/* ─── Page Header ────────────────────────────────────────────────── */}
+   603→      <div className="relative mb-6 sm:mb-8">
+   604→        {/* Decorative gradient background for category pages */}
+   605→        {categoryName && (
+   606→          <div
+   607→            className="absolute inset-0 -m-4 sm:-m-6 rounded-2xl opacity-[0.04] -z-10"
+   608→            style={{
+   609→              background: 'linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary) 40%, transparent 60%, var(--color-primary) 100%)',
+   610→            }}
+   611→          />
+   612→        )}
+   613→
+   614→        {/* Breadcrumb */}
+   615→        {categoryName && (
+   616→          <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3" aria-label="Breadcrumb">
+   617→            <button
+   618→              onClick={() => navigate('home')}
+   619→              className="flex items-center gap-1 hover:text-foreground transition-colors"
+   620→            >
+   621→              <Home className="h-3 w-3" />
+   622→              Home
+   623→            </button>
+   624→            <ChevronRight className="h-3 w-3" />
+   625→            <button
+   626→              onClick={() => { setCategory(''); }}
+   627→              className="hover:text-foreground transition-colors"
+   628→            >
+   629→              Products
+   630→            </button>
+   631→            <ChevronRight className="h-3 w-3" />
+   632→            <span className="text-foreground font-medium">{categoryName}</span>
+   633→          </nav>
+   634→        )}
+   635→
+   636→        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+   637→          <div className="flex items-center gap-3">
+   638→            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+   639→              {categoryName || 'All Products'}
+   640→            </h1>
+   641→            {total > 0 && (
+   642→              <Badge
+   643→                variant="secondary"
+   644→                className="rounded-full text-xs font-normal px-2.5 py-0.5 bg-primary/10 text-primary border-0"
+   645→              >
+   646→                {total} {total === 1 ? 'item' : 'items'}
+   647→              </Badge>
+   648→            )}
+   649→          </div>
+   650→
+   651→          {categoryName && (
+   652→            <button
+   653→              onClick={() => setCategory('')}
+   654→              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors group"
+   655→            >
+   656→              <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+   657→              Back to All Products
+   658→            </button>
+   659→          )}
+   660→        </div>
+   661→      </div>
+   662→
+   663→      {/* ─── Main Layout ───────────────────────────────────────────────── */}
+   664→      <div className="flex gap-6 lg:gap-8">
+   665→        {/* Desktop Sidebar */}
+   666→        <aside className="hidden lg:block w-60 shrink-0">
+   667→          <div className="sticky top-24">
+   668→            <div className="flex items-center justify-between mb-4">
+   669→              <h3 className="text-sm font-semibold flex items-center gap-2">
+   670→                <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+   671→                Filters
+   672→              </h3>
+   673→            </div>
+   674→            <FilterSidebar key={filterResetKey} {...filterProps} />
+   675→          </div>
+   676→        </aside>
+   677→
+   678→        {/* Main Content */}
+   679→        <div className="flex-1 min-w-0">
+   680→          {/* Top Bar: Search + Sort + Grid Toggle + Mobile Filter */}
+   681→          <div className="flex items-center gap-2 sm:gap-3 mb-5">
+   682→            <div className="relative flex-1 max-w-sm">
+   683→              <Input
+   684→                placeholder="Search products..."
+   685→                value={search}
+   686→                onChange={e => setSearch(e.target.value)}
+   687→                className="rounded-full pr-8 h-9"
+   688→              />
+   689→              {search && (
+   690→                <button
+   691→                  onClick={() => setSearch('')}
+   692→                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-0.5 hover:bg-accent transition-colors"
+   693→                >
+   694→                  <X className="h-3.5 w-3.5 text-muted-foreground" />
+   695→                </button>
+   696→              )}
+   697→            </div>
+   698→
+   699→            {/* Mobile filter button */}
+   700→            <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+   701→              <SheetTrigger asChild>
+   702→                <Button variant="outline" size="sm" className="lg:hidden gap-2 rounded-full h-9">
+   703→                  <SlidersHorizontal className="h-4 w-4" />
+   704→                  Filters
+   705→                  {hasFilters && (
+   706→                    <span className="h-4 w-4 rounded-full bg-primary text-primary-foreground text-[10px] flex items-center justify-center">
+   707→                      !
+   708→                    </span>
+   709→                  )}
+   710→                </Button>
+   711→              </SheetTrigger>
+   712→              <SheetContent side="left" className="w-80 overflow-y-auto">
+   713→                <SheetHeader>
+   714→                  <SheetTitle className="flex items-center gap-2">
+   715→                    <SlidersHorizontal className="h-4 w-4" />
+   716→                    Filters
+   717→                  </SheetTitle>
+   718→                </SheetHeader>
+   719→                <div className="mt-2 mb-4">
+   720→                  <p className="text-xs text-muted-foreground">
+   721→                    Showing <span className="font-medium text-foreground">{total}</span> products
+   722→                  </p>
+   723→                </div>
+   724→                <FilterSidebar key={filterResetKey} {...filterProps} />
+   725→                <div className="mt-6 pt-4 border-t">
+   726→                  <Button
+   727→                    className="w-full rounded-full"
+   728→                    onClick={() => setMobileFiltersOpen(false)}
+   729→                  >
+   730→                    Show {total} {total === 1 ? 'Product' : 'Products'}
+   731→                  </Button>
+   732→                </div>
+   733→              </SheetContent>
+   734→            </Sheet>
+   735→
+   736→            {/* Sort dropdown */}
+   737→            <SortDropdown sort={sort} setSort={setSort} />
+   738→
+   739→            {/* Grid toggle */}
+   740→            <GridViewToggle cols={gridCols} setCols={setGridCols} />
+   741→          </div>
+   742→
+   743→          {/* Showing X of Y */}
+   744→          {!loading && products.length > 0 && (
+   745→            <p className="text-xs text-muted-foreground mb-4">
+   746→              Showing <span className="font-medium text-foreground">{products.length}</span> of{' '}
+   747→              <span className="font-medium text-foreground">{total}</span> products
+   748→            </p>
+   749→          )}
+   750→
+   751→          {/* Active Filter Chips */}
+   752→          {!loading && (
+   753→            <ActiveFilterChips
+   754→              category={category}
+   755→              categories={categories}
+   756→              setCategory={setCategory}
+   757→              sale={sale}
+   758→              setSale={setSale}
+   759→              priceRange={priceRange}
+   760→              setPriceRange={setPriceRange}
+   761→              search={search}
+   762→              setSearch={setSearch}
+   763→            />
+   764→          )}
+   765→
+   766→          {/* Content Area */}
+   767→          {loading ? (
+   768→            <EnhancedSkeletonGrid cols={gridCols} />
+   769→          ) : products.length === 0 ? (
+   770→            <div className="relative rounded-2xl border bg-muted/30">
+   771→              <EmptyState clearFilters={clearFilters} browseAll={browseAll} />
+   772→            </div>
+   773→          ) : (
+   774→            <div className={cn('grid gap-3 sm:gap-4', gridColClass)}>
+   775→              <AnimatePresence mode="popLayout">
+   776→                {products.map(p => (
+   777→                  <motion.div
+   778→                    key={p.id}
+   779→                    layout
+   780→                    initial={{ opacity: 0, scale: 0.95 }}
+   781→                    animate={{ opacity: 1, scale: 1 }}
+   782→                    exit={{ opacity: 0, scale: 0.95 }}
+   783→                    transition={{ duration: 0.2 }}
+   784→                  >
+   785→                    <ProductCard product={p} />
+   786→                  </motion.div>
+   787→                ))}
+   788→              </AnimatePresence>
+   789→            </div>
+   790→          )}
+   791→        </div>
+   792→      </div>
+   793→    </div>
+   794→  );
+   795→}

@@ -25,6 +25,12 @@ export interface UserType {
   addresses: Array<{ id: string; name: string; phone: string; address: string; city: string; district: string; isDefault: boolean }>;
 }
 
+export interface ToastItem {
+  id: string;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
+
 interface AppState {
   // Navigation
   currentPage: string;
@@ -54,6 +60,20 @@ interface AppState {
   setCartDrawerOpen: (open: boolean) => void;
   lastOrderNumber: string | null;
   setLastOrderNumber: (num: string | null) => void;
+
+  // Wishlist
+  wishlistItems: string[]; // array of product IDs
+  toggleWishlist: (productId: string) => void;
+  isWishlisted: (productId: string) => boolean;
+
+  // Recently Viewed
+  recentlyViewed: string[]; // array of product slugs
+  addRecentlyViewed: (slug: string) => void;
+
+  // Toast notifications
+  toasts: Array<{ id: string; message: string; type: 'success' | 'error' | 'info' }>;
+  addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
+  removeToast: (id: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -121,6 +141,45 @@ export const useAppStore = create<AppState>()(
       setCartDrawerOpen: (open) => set({ cartDrawerOpen: open }),
       lastOrderNumber: null,
       setLastOrderNumber: (num) => set({ lastOrderNumber: num }),
+
+      // Wishlist
+      wishlistItems: [],
+      toggleWishlist: (productId) => {
+        const items = get().wishlistItems;
+        if (items.includes(productId)) {
+          set({ wishlistItems: items.filter((id) => id !== productId) });
+        } else {
+          set({ wishlistItems: [...items, productId] });
+        }
+      },
+      isWishlisted: (productId) => {
+        return get().wishlistItems.includes(productId);
+      },
+
+      // Recently Viewed
+      recentlyViewed: [],
+      addRecentlyViewed: (slug) => {
+        const list = get().recentlyViewed.filter((s) => s !== slug);
+        list.unshift(slug);
+        if (list.length > 10) {
+          list.length = 10;
+        }
+        set({ recentlyViewed: [...list] });
+      },
+
+      // Toast notifications
+      toasts: [],
+      addToast: (message, type = 'success') => {
+        const id = `toast-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        const toast: ToastItem = { id, message, type };
+        set({ toasts: [...get().toasts, toast] });
+        setTimeout(() => {
+          get().removeToast(id);
+        }, 3000);
+      },
+      removeToast: (id) => {
+        set({ toasts: get().toasts.filter((t) => t.id !== id) });
+      },
     }),
     {
       name: 'roshni-store',
@@ -130,6 +189,8 @@ export const useAppStore = create<AppState>()(
         cartSubtotal: state.cartSubtotal,
         user: state.user,
         lastOrderNumber: state.lastOrderNumber,
+        wishlistItems: state.wishlistItems,
+        recentlyViewed: state.recentlyViewed,
       }),
     }
   )
