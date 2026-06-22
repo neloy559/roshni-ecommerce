@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String    @unique
+  passwordHash  String
+  role          String    @default("customer")
+  addresses     String    @default("[]")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orders        Order[]
+  cartItems     CartItem[]
+}
+
+model Category {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  image           String    @default("")
+  parentId        String?
+  order           Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  products        Product[]
+}
+
+model Product {
+  id              String    @id @default(cuid())
+  name            String
+  slug            String    @unique
+  description     String    @default("")
+  price           Float
+  discountPrice   Float?
+  stock           Int       @default(0)
+  images          String    @default("[]")
+  categoryId      String
+  status          String    @default("active")
+  tags            String    @default("[]")
+  viewCount       Int       @default(0)
+  orderCount      Int       @default(0)
+  isTrending      Boolean   @default(false)
+  isNewArrival    Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  category        Category  @relation(fields: [categoryId], references: [id])
+  variants        ProductVariant[]
+  cartItems       CartItem[]
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  size      String  @default("")
+  color     String  @default("")
+  stock     Int     @default(0)
+  sku       String  @default("")
+  price     Float?
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String?
+  sessionId String?
+  productId String
+  variantId String?
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Order {
+  id                String    @id @default(cuid())
+  orderNumber       String    @unique
+  userId            String?
+  items             String    @default("[]")
+  shippingAddress   String    @default("{}")
+  status            String    @default("pending")
+  total             Float
+  subtotal          Float
+  shippingCost      Float     @default(0)
+  discountAmount    Float     @default(0)
+  promoCode         String?
+  paymentProvider   String?
+  paymentStatus     String    @default("pending")
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User?     @relation(fields: [userId], references: [id])
+  payments          Payment[]
+}
+
+model Payment {
+  id                  String    @id @default(cuid())
+  orderId             String
+  provider            String
+  merchantInvoiceNo   String    @unique
+  status              String    @default("pending")
+  amount              Float
+  rawCallbackLog      String    @default("")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  order               Order     @relation(fields: [orderId], references: [id])
+}
+
+model Banner {
+  id          String    @id @default(cuid())
+  image       String
+  linkTarget  String    @default("")
+  title       String    @default("")
+  subtitle    String    @default("")
+  activeFrom  DateTime?
+  activeTo    DateTime?
+  order       Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model PromoCode {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  discount    Float
+  type        String    @default("percentage")
+  minOrder    Float     @default(0)
+  maxUses     Int       @default(0)
+  usedCount   Int       @default(0)
+  isActive    Boolean   @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model StoreSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
