@@ -435,7 +435,7 @@ export function AccountPage() {
                               {order.items?.map((item: any, i: number) => (
                                 <div
                                   key={i}
-                                  className="flex items-center gap-3 p-3 bg-white rounded-xl border border-border/50"
+                                  className="flex items-center gap-3 p-3 bg-card rounded-xl border border-border/50"
                                 >
                                   <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                                     {item.image ? (

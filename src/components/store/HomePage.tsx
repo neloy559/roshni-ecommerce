@@ -143,11 +143,13 @@ function ProductCard({ product }: { product: Product }) {
 // ─── ProductCardSkeleton ─────────────────────────────────────────────────────
 function ProductCardSkeleton() {
   return (
-    <Card className="border-0 shadow-sm overflow-hidden flex-shrink-0 w-[calc(50%-6px)] sm:w-auto sm:flex-shrink">
-      <Skeleton className="aspect-[3/4] w-full" />
-      <CardContent className="p-3 sm:p-4 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/3" />
+    <Card className="border-0 shadow-sm overflow-hidden flex-shrink-0 w-[calc(50%-6px)] sm:w-auto sm:flex-shrink animate-pulse">
+      <div className="relative aspect-[3/4] w-full skeleton-shimmer">
+        <Skeleton className="absolute inset-0 w-full h-full" />
+      </div>
+      <CardContent className="p-3 sm:p-4 space-y-2.5">
+        <Skeleton className="h-4 w-3/4 rounded" />
+        <Skeleton className="h-4 w-1/3 rounded" />
       </CardContent>
     </Card>
   );

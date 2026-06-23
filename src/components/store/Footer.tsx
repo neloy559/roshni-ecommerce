@@ -80,7 +80,7 @@ export function Footer() {
               placeholder="Enter your email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-11 rounded-full bg-white border-pink-200 focus-visible:ring-pink-400 text-sm px-5"
+              className="h-11 rounded-full bg-card border-pink-200 dark:border-pink-800 focus-visible:ring-pink-400 text-sm px-5"
             />
             <Button
               type="submit"

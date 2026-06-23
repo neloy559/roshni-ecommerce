@@ -298,7 +298,7 @@ The Roshni e-commerce platform is now feature-rich with ~8,500+ lines of code ac
    - Initial product catalog size
 
 ### Priority Recommendations for Next Phase
-1. **Full Dark Mode Audit** - Update all components to use semantic colors instead of hardcoded bg-white
+1. **Full Dark Mode Audit** - ✅ DONE (Task 4)
 2. **Phase 6: SEO & Performance** - Add JSON-LD structured data, meta tags, sitemap.xml, robots.txt, image optimization
 3. **Phase 7: Production** - Payment integration (bKash/Nagad sandbox → production), deployment to Vercel + Railway
 4. **Wishlist API Backend** - Server-side persistence for wishlist
@@ -306,3 +306,119 @@ The Roshni e-commerce platform is now feature-rich with ~8,500+ lines of code ac
 6. **Internationalization** - Bengali language support for Bangladesh market
 7. **Product Comparison** - Compare 2-3 products side by side
 8. **User Reviews/Ratings** - Review system with star ratings per product
+
+---
+Task ID: 4
+Agent: Enhancement Agent (Round 3)
+Task: Full dark mode audit, cookie consent, back-to-top progress, skeleton polish
+
+Work Log:
+- **Dark Mode Audit**: Searched all store components for hardcoded `bg-white`
+  - WishlistPage.tsx: Fixed 5 instances (Card bg-white→bg-card, overlay buttons bg-white/95→bg-card/95, remove button bg-white/90→bg-card/90, recently viewed Card bg-white→bg-card, added dark:hover:bg-red-950/50)
+  - AccountPage.tsx: Fixed 1 instance (order item bg-white→bg-card)
+  - Footer.tsx: Fixed 1 instance (newsletter input bg-white→bg-card, added dark:border-pink-800)
+  - CartDrawer.tsx: Already uses bg-card/bg-background — no changes needed
+  - CartPage.tsx: Already uses bg-card — no changes needed
+  - CheckoutPage.tsx: All bg-white are decorative (bg-white/10, bg-white/5, bg-white/15, bg-white/20) on gradient backgrounds — no changes needed
+  - ProductDetailPage.tsx: No bg-white found — no changes needed
+  - ProductsPage.tsx: Only has dark:hover:bg-white/10 which is correct for dark mode hover — no changes needed
+- **Cookie Consent Banner** (`src/components/store/CookieConsent.tsx`, new file):
+  - Fixed bottom of screen, z-[70], glass/blur background with backdrop-blur-xl
+  - Cookie icon, descriptive text with linked "Cookie Policy"
+  - "Accept All" primary button stores acceptance in localStorage (`roshni-cookies-accepted`)
+  - "Customize" ghost button shows toast "Cookie settings coming soon!"
+  - Only shows on first visit (checks localStorage on mount)
+  - 1.5s delayed appearance to avoid flash on load
+  - AnimatePresence with smooth enter/exit animation
+  - Responsive layout (stacked on mobile, row on desktop)
+  - Integrated into page.tsx, only shown on non-admin pages
+- **Back to Top Enhancement** (`src/app/page.tsx`):
+  - Added SVG circular progress ring around arrow icon (stroke-dasharray/offset technique)
+  - Progress fills as user scrolls down (based on scroll position / document height ratio)
+  - Uses requestAnimationFrame for smooth performance
+  - Changed animation from basic duration-based to spring physics (stiffness: 350, damping: 25)
+  - Still only appears after scrolling 400px
+  - Track circle at 20% opacity, progress circle at 60% opacity
+- **Product Card Skeleton Enhancement** (`src/components/store/HomePage.tsx`):
+  - Added `animate-pulse` class for subtle pulse animation
+  - Wrapped image skeleton in `skeleton-shimmer` container (uses existing `.skeleton-shimmer::after` CSS gradient overlay)
+  - Maintained aspect-[3/4] matching real product cards
+  - Added `rounded` class to text skeleton elements for softer edges
+
+Stage Summary:
+- All remaining `bg-white` content backgrounds replaced with `bg-card` for dark mode compatibility
+- Cookie consent banner added with polished glassmorphism design and localStorage persistence
+- Back-to-top button enhanced with SVG circular scroll progress indicator and spring animation
+- Product card skeletons now feature shimmer overlay and pulse animation
+- All code passes ESLint with zero errors
+- Dev server running correctly, all API endpoints responding
+
+---
+Task ID: 4b
+Agent: Enhancement Agent (Round 3, continued)
+Task: WhatsApp floating button, page transition loading bar
+
+Work Log:
+- **WhatsApp Floating Chat Button** (`src/components/store/WhatsAppButton.tsx`, new file, ~95 lines):
+  - Fixed bottom-left (bottom-24 for safe area clearance), z-40
+  - Green round button with official WhatsApp SVG icon (inline)
+  - On hover, animated tooltip bubble slides out: "Chat with us! We reply within minutes"
+  - Tooltip has arrow pointing to button, glassmorphism card style
+  - Pulse ring animation (animate-ping at 20% opacity) to draw attention
+  - Clicks open `https://wa.me/8801700000000` in new tab
+  - Motion whileHover/whileTap for scale interaction
+  - Only rendered on non-admin pages
+- **Page Transition Loading Bar** (`src/app/page.tsx`, inline):
+  - Thin 3px gradient bar (primary → pink-400 → primary) at very top of page, z-[100]
+  - Uses ref-based DOM manipulation to avoid React 19 lint issues (no setState in effects)
+  - Animates width: 20% → 60% → 90% → 100% → fade out on page change
+  - Triggered by `currentPage` changes in Zustand
+  - Timers properly cleaned up on unmount to prevent memory leaks
+
+Stage Summary:
+- 2 new UI features: WhatsApp chat button, page transition loader
+- WhatsApp button: floating, animated tooltip, pulse attention, glassmorphism
+- Page loader: gradient progress bar, ref-based for lint compliance
+- All code passes ESLint with zero errors
+- Agent-browser QA: Both features verified working, zero JS errors
+
+---
+## Current Project Status
+
+### Assessment
+The Roshni e-commerce platform is now highly feature-rich with ~9,500+ lines of code across 17+ key files. All core e-commerce features are complete (Phase 3-5 PRD). Dark mode is now fully audited and working across all components. The platform has 6 new quality-of-life features beyond the original PRD scope.
+
+### Completed Modifications (This Round - Tasks 4 + 4b)
+1. **Dark Mode Audit**: Fixed 7 `bg-white` instances across 3 files (WishlistPage, AccountPage, Footer)
+2. **Cookie Consent Banner**: Glassmorphism bottom bar with Accept/Customize, localStorage persistence
+3. **Back-to-Top with Progress Ring**: SVG circular progress indicator showing scroll position
+4. **Product Card Skeleton Shimmer**: Pulse animation + gradient shimmer overlay
+5. **WhatsApp Floating Button**: Green chat button with animated tooltip bubble
+6. **Page Transition Loader**: Thin gradient progress bar on route changes
+
+### Verification Results
+- ✅ ESLint: Zero errors
+- ✅ Agent-Browser QA: All pages render correctly in both light and dark mode
+- ✅ WhatsApp button visible and interactive
+- ✅ Back-to-top with scroll progress ring working
+- ✅ Cookie consent shows on first visit, hides on accept
+- ✅ Page loader animates on navigation
+- ✅ No JavaScript errors on any tested page
+
+### Unresolved Issues / Risks
+1. **Dark Mode Edge Cases**: Some very subtle components (admin dashboard) may still have minor dark mode issues - not user-facing priority
+2. **Wishlist Backend**: Still client-side only via Zustand persist
+3. **WhatsApp Number**: Uses placeholder number (8801700000000) - needs real number for production
+4. **PRD Open Questions** (pending client confirmation):
+   - Variant requirements, Guest checkout, Login identifier, Promo code rules
+   - Shipping fee rules, Brand color confirmation, Initial product catalog size
+
+### Priority Recommendations for Next Phase
+1. **Phase 6: SEO & Performance** - JSON-LD structured data, meta tags, sitemap.xml, robots.txt, image optimization
+2. **Phase 7: Production** - Payment integration (bKash/Nagad), deployment
+3. **Wishlist API Backend** - Server-side persistence
+4. **Image Optimization** - Next.js Image component with proper sizing
+5. **Internationalization** - Bengali language support
+6. **Product Comparison** - Compare 2-3 products side by side
+7. **User Reviews/Ratings** - Review system with star ratings
+8. **Order Tracking Timeline** - Visual order status timeline page

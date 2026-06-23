@@ -1,0 +1,910 @@
+     1→'use client';
+     2→
+     3→import { useState, useEffect, useCallback, useRef } from 'react';
+     4→import { useAppStore } from '@/lib/store';
+     5→import { ProductCard } from './HomePage';
+     6→import {
+     7→  Heart, ShoppingBag, Minus, Plus, Check, Truck, RefreshCw, Shield,
+     8→  ChevronRight, Home, Ruler, Share2, ArrowRight, Package, Clock,
+     9→  Bell, Sparkles
+    10→} from 'lucide-react';
+    11→import { Button } from '@/components/ui/button';
+    12→import { Badge } from '@/components/ui/badge';
+    13→import { Separator } from '@/components/ui/separator';
+    14→import {
+    15→  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+    16→} from '@/components/ui/dialog';
+    17→import { cn } from '@/lib/utils';
+    18→import { motion, AnimatePresence } from 'framer-motion';
+    19→
+    20→interface Product {
+    21→  id: string; name: string; slug: string; description: string;
+    22→  price: number; discountPrice: number | null; images: string[];
+    23→  effectivePrice: number; hasDiscount: boolean; discountPercent: number;
+    24→  stock: number; tags: string[];
+    25→  category: { name: string; slug: string };
+    26→  variants: Array<{ id: string; size: string; color: string; stock: number; sku: string; price: number | null }>;
+    27→}
+    28→type ProductType = Product;
+    29→
+    30→/* ─── Size Guide Content ─────────────────────────────────── */
+    31→function SizeGuideContent({ isShoes }: { isShoes: boolean }) {
+    32→  if (isShoes) {
+    33→    return (
+    34→      <div className="overflow-x-auto">
+    35→        <table className="w-full text-sm">
+    36→          <thead>
+    37→            <tr className="border-b">
+    38→              <th className="text-left py-2 px-3 font-semibold">US</th>
+    39→              <th className="text-left py-2 px-3 font-semibold">EU</th>
+    40→              <th className="text-left py-2 px-3 font-semibold">UK</th>
+    41→              <th className="text-left py-2 px-3 font-semibold">BD</th>
+    42→              <th className="text-left py-2 px-3 font-semibold">Foot Length (cm)</th>
+    43→            </tr>
+    44→          </thead>
+    45→          <tbody className="text-muted-foreground">
+    46→            {[
+    47→              ['5', '35', '2.5', '3', '21.5'],
+    48→              ['6', '36', '3.5', '4', '22.5'],
+    49→              ['7', '37', '4.5', '5', '23.5'],
+    50→              ['8', '38', '5.5', '6', '24.5'],
+    51→              ['9', '39', '6.5', '7', '25.5'],
+    52→              ['10', '40', '7.5', '8', '26.0'],
+    53→            ].map((row) => (
+    54→              <tr key={row[0]} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+    55→                {row.map((cell) => (
+    56→                  <td key={cell} className="py-2 px-3">{cell}</td>
+    57→                ))}
+    58→              </tr>
+    59→            ))}
+    60→          </tbody>
+    61→        </table>
+    62→      </div>
+    63→    );
+    64→  }
+    65→  return (
+    66→    <div className="overflow-x-auto">
+    67→      <table className="w-full text-sm">
+    68→        <thead>
+    69→          <tr className="border-b">
+    70→            <th className="text-left py-2 px-3 font-semibold">Size</th>
+    71→            <th className="text-left py-2 px-3 font-semibold">Bust (in)</th>
+    72→            <th className="text-left py-2 px-3 font-semibold">Waist (in)</th>
+    73→            <th className="text-left py-2 px-3 font-semibold">Hip (in)</th>
+    74→          </tr>
+    75→        </thead>
+    76→        <tbody className="text-muted-foreground">
+    77→          {[
+    78→            ['S', '32-34', '24-26', '34-36'],
+    79→            ['M', '34-36', '26-28', '36-38'],
+    80→            ['L', '36-38', '28-30', '38-40'],
+    81→            ['XL', '38-40', '30-32', '40-42'],
+    82→          ].map((row) => (
+    83→            <tr key={row[0]} className="border-b border-border/50 hover:bg-accent/30 transition-colors">
+    84→              {row.map((cell) => (
+    85→                <td key={cell} className="py-2 px-3">{cell}</td>
+    86→              ))}
+    87→            </tr>
+    88→          ))}
+    89→        </tbody>
+    90→      </table>
+    91→    </div>
+    92→  );
+    93→}
+    94→
+    95→/* ─── Confetti Particle ──────────────────────────────────── */
+    96→function ConfettiParticle({ index }: { index: number }) {
+    97→  const colors = ['#f43f5e', '#fb923c', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa'];
+    98→  const color = colors[index % colors.length];
+    99→  const startX = 50 + (Math.sin(index * 1.7) * 40);
+   100→  const endX = startX + (Math.cos(index * 2.3) * 60);
+   101→  const rotation = index * 137;
+   102→
+   103→  return (
+   104→    <motion.div
+   105→      className="absolute w-1.5 h-1.5 rounded-full pointer-events-none"
+   106→      style={{ backgroundColor: color, left: `${startX}%`, top: '50%' }}
+   107→      initial={{ opacity: 1, y: 0, x: 0, scale: 1, rotate: 0 }}
+   108→      animate={{
+   109→        opacity: 0,
+   110→        y: [0, -30, -80, -120],
+   111→        x: [0, (endX - startX) * 0.3, (endX - startX) * 0.7, (endX - startX)],
+   112→        scale: [1, 1.5, 0.8, 0],
+   113→        rotate: [0, rotation, rotation * 2, rotation * 3],
+   114→      }}
+   115→      transition={{ duration: 0.8, ease: 'easeOut', delay: index * 0.02 }}
+   116→    />
+   117→  );
+   118→}
+   119→
+   120→/* ─── Main Component ─────────────────────────────────────── */
+   121→export function ProductDetailPage() {
+   122→  const {
+   123→    pageParams, navigate, addToCart, user,
+   124→    toggleWishlist, isWishlisted, addRecentlyViewed, addToast,
+   125→  } = useAppStore();
+   126→
+   127→  const [product, setProduct] = useState<ProductType | null>(null);
+   128→  const [related, setRelated] = useState<ProductType[]>([]);
+   129→  const [loading, setLoading] = useState(true);
+   130→  const [selectedImage, setSelectedImage] = useState(0);
+   131→  const [selectedVariant, setSelectedVariant] = useState<string | null>(null);
+   132→  const [quantity, setQuantity] = useState(1);
+   133→  const [added, setAdded] = useState(false);
+   134→  const [showConfetti, setShowConfetti] = useState(false);
+   135→  const [activeTab, setActiveTab] = useState<'description' | 'details' | 'shipping'>('description');
+   136→  const [previousPrice, setPreviousPrice] = useState<number | null>(null);
+   137→  const [priceAnimating, setPriceAnimating] = useState(false);
+   138→  const [zoomOrigin, setZoomOrigin] = useState('center center');
+   139→  const [isZooming, setIsZooming] = useState(false);
+   140→  const [sizeGuideOpen, setSizeGuideOpen] = useState(false);
+   141→
+   142→  const mainImageRef = useRef<HTMLDivElement>(null);
+   143→  const prevPriceRef = useRef<number | null>(null);
+   144→
+   145→  // Fetch product data
+   146→  useEffect(() => {
+   147→    let cancelled = false;
+   148→    const slug = pageParams.slug;
+   149→    if (!slug) { navigate('products'); return; }
+   150→
+   151→    fetch(`/api/products/${slug}`).then(r => r.json()).then(data => {
+   152→      if (cancelled) return;
+   153→      setProduct(data.product);
+   154→      setRelated(data.related || []);
+   155→      if (data.product?.variants?.length > 0) {
+   156→        setSelectedVariant(data.product.variants[0].id);
+   157→      }
+   158→      setLoading(false);
+   159→    }).catch(() => { if (!cancelled) { navigate('products'); } });
+   160→
+   161→    return () => { cancelled = true; };
+   162→  }, [pageParams.slug]);
+   163→
+   164→  // Track recently viewed
+   165→  useEffect(() => {
+   166→    if (product?.slug) {
+   167→      addRecentlyViewed(product.slug);
+   168→    }
+   169→  }, [product?.slug]);
+   170→
+   171→  // Handle variant price change animation
+   172→  const handleVariantSelect = useCallback((variantId: string) => {
+   173→    if (!product) return;
+   174→    const newVariant = product.variants.find(v => v.id === variantId);
+   175→    const currentPrice = selectedVariant
+   176→      ? (product.variants.find(v => v.id === selectedVariant)?.price || product.effectivePrice)
+   177→      : product.effectivePrice;
+   178→    const newPrice = newVariant?.price || product.effectivePrice;
+   179→
+   180→    if (currentPrice !== newPrice) {
+   181→      setPreviousPrice(currentPrice);
+   182→      setPriceAnimating(true);
+   183→      setTimeout(() => setPriceAnimating(false), 500);
+   184→    }
+   185→
+   186→    setSelectedVariant(variantId);
+   187→  }, [product, selectedVariant]);
+   188→
+   189→  // Zoom handler
+   190→  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+   191→    if (!mainImageRef.current) return;
+   192→    const rect = mainImageRef.current.getBoundingClientRect();
+   193→    const x = ((e.clientX - rect.left) / rect.width) * 100;
+   194→    const y = ((e.clientY - rect.top) / rect.height) * 100;
+   195→    setZoomOrigin(`${x}% ${y}%`);
+   196→  }, []);
+   197→
+   198→  const handleMouseEnter = useCallback(() => {
+   199→    if (window.innerWidth >= 768) setIsZooming(true);
+   200→  }, []);
+   201→
+   202→  const handleMouseLeave = useCallback(() => {
+   203→    setIsZooming(false);
+   204→  }, []);
+   205→
+   206→  // Add to cart with confetti
+   207→  const handleAddToCart = useCallback(() => {
+   208→    if (!product) return;
+   209→    const variant = selectedVariant ? product.variants.find(v => v.id === selectedVariant) : null;
+   210→    addToCart({
+   211→      id: `cart-${Date.now()}`,
+   212→      productId: product.id,
+   213→      variantId: selectedVariant,
+   214→      quantity,
+   215→      name: product.name,
+   216→      slug: product.slug,
+   217→      image: product.images[selectedImage],
+   218→      price: variant?.price || product.effectivePrice,
+   219→      originalPrice: product.price,
+   220→      hasDiscount: product.hasDiscount,
+   221→      variant: variant ? { id: variant.id, size: variant.size, color: variant.color, stock: variant.stock } : null,
+   222→      stock: product.stock,
+   223→    });
+   224→    setAdded(true);
+   225→    setShowConfetti(true);
+   226→    setTimeout(() => setAdded(false), 2000);
+   227→    setTimeout(() => setShowConfetti(false), 1000);
+   228→  }, [product, selectedVariant, quantity, selectedImage, addToCart]);
+   229→
+   230→  const handleBuyNow = useCallback(() => {
+   231→    handleAddToCart();
+   232→    setTimeout(() => navigate('checkout'), 300);
+   233→  }, [handleAddToCart, navigate]);
+   234→
+   235→  const handleShare = useCallback(async () => {
+   236→    const url = window.location.href;
+   237→    if (navigator.clipboard) {
+   238→      await navigator.clipboard.writeText(url);
+   239→    } else {
+   240→      const ta = document.createElement('textarea');
+   241→      ta.value = url;
+   242→      document.body.appendChild(ta);
+   243→      ta.select();
+   244→      document.execCommand('copy');
+   245→      document.body.removeChild(ta);
+   246→    }
+   247→    addToast('Link copied to clipboard!', 'success');
+   248→  }, [addToast]);
+   249→
+   250→  const handleNotifyMe = useCallback(() => {
+   251→    addToast("We'll notify you when this product is available!", 'info');
+   252→  }, [addToast]);
+   253→
+   254→  // Update prevPriceRef when product changes
+   255→  useEffect(() => {
+   256→    if (product) {
+   257→      prevPriceRef.current = product.effectivePrice;
+   258→    }
+   259→  }, [product]);
+   260→
+   261→  // Loading skeleton
+   262→  if (loading) {
+   263→    return (
+   264→      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+   265→        <div className="grid md:grid-cols-2 gap-8">
+   266→          <div className="aspect-square rounded-2xl bg-muted animate-pulse" />
+   267→          <div className="space-y-4">
+   268→            <div className="h-4 w-48 bg-muted rounded animate-pulse" />
+   269→            <div className="h-8 w-3/4 bg-muted rounded animate-pulse" />
+   270→            <div className="h-6 w-1/3 bg-muted rounded animate-pulse" />
+   271→            <div className="h-4 w-full bg-muted rounded animate-pulse" />
+   272→            <div className="h-4 w-full bg-muted rounded animate-pulse" />
+   273→            <div className="h-12 w-full bg-muted rounded-full animate-pulse" />
+   274→          </div>
+   275→        </div>
+   276→      </div>
+   277→    );
+   278→  }
+   279→
+   280→  if (!product) return null;
+   281→
+   282→  const hasSizes = product.variants.some(v => v.size);
+   283→  const hasColors = product.variants.some(v => v.color);
+   284→  const selectedVariantObj = selectedVariant ? product.variants.find(v => v.id === selectedVariant) : null;
+   285→  const currentStock = selectedVariantObj?.stock || product.stock;
+   286→  const currentPrice = selectedVariantObj?.price || product.effectivePrice;
+   287→  const wishlisted = isWishlisted(product.id);
+   288→  const uniqueSizes = [...new Set(product.variants.filter(v => v.size).map(v => v.size))];
+   289→  const uniqueColors = [...new Set(product.variants.filter(v => v.color).map(v => v.color))];
+   290→  const isShoesCategory = product.category.name.toLowerCase().includes('shoe') || product.category.slug.toLowerCase().includes('shoe');
+   291→  const stockPercent = product.stock > 0 ? Math.min(100, (currentStock / Math.max(product.stock, 20)) * 100) : 0;
+   292→
+   293→  const tabs: Array<{ key: 'description' | 'details' | 'shipping'; label: string }> = [
+   294→    { key: 'description', label: 'Description' },
+   295→    { key: 'details', label: 'Details' },
+   296→    { key: 'shipping', label: 'Shipping' },
+   297→  ];
+   298→
+   299→  return (
+   300→    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+   301→      {/* ─── Breadcrumb ─────────────────────────────────── */}
+   302→      <nav className="flex items-center gap-1.5 text-sm mb-6" aria-label="Breadcrumb">
+   303→        <button
+   304→          onClick={() => navigate('home')}
+   305→          className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+   306→        >
+   307→          <Home className="h-3.5 w-3.5" />
+   308→          <span>Home</span>
+   309→        </button>
+   310→        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+   311→        <button
+   312→          onClick={() => navigate('products', { category: product.category.slug })}
+   313→          className="text-muted-foreground hover:text-foreground transition-colors"
+   314→        >
+   315→          {product.category.name}
+   316→        </button>
+   317→        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+   318→        <span className="text-foreground font-medium truncate max-w-[200px] sm:max-w-none">
+   319→          {product.name}
+   320→        </span>
+   321→      </nav>
+   322→
+   323→      <div className="grid md:grid-cols-2 gap-6 lg:gap-12">
+   324→        {/* ─── Image Gallery ────────────────────────────── */}
+   325→        <div className="space-y-3">
+   326→          {/* Main image with zoom */}
+   327→          <div
+   328→            ref={mainImageRef}
+   329→            className="relative aspect-square rounded-2xl overflow-hidden bg-muted cursor-zoom-in"
+   330→            onMouseMove={handleMouseMove}
+   331→            onMouseEnter={handleMouseEnter}
+   332→            onMouseLeave={handleMouseLeave}
+   333→          >
+   334→            <motion.img
+   335→              src={product.images[selectedImage]}
+   336→              alt={product.name}
+   337→              className="w-full h-full object-cover select-none"
+   338→              animate={{
+   339→                transformOrigin: zoomOrigin,
+   340→                scale: isZooming ? 2 : 1,
+   341→              }}
+   342→              transition={{ type: 'tween', duration: 0.15 }}
+   343→              drag={window.innerWidth < 768 ? 'x' : false}
+   344→              dragConstraints={mainImageRef}
+   345→              onDragEnd={(_e, info) => {
+   346→                if (info.offset.x < -50 && selectedImage < product.images.length - 1) {
+   347→                  setSelectedImage(i => i + 1);
+   348→                } else if (info.offset.x > 50 && selectedImage > 0) {
+   349→                  setSelectedImage(i => i - 1);
+   350→                }
+   351→              }}
+   352→            />
+   353→            {product.hasDiscount && (
+   354→              <Badge className="absolute top-4 left-4 bg-primary text-primary-foreground rounded-full px-3 py-1 text-sm font-semibold shadow-lg">
+   355→                -{product.discountPercent}%
+   356→              </Badge>
+   357→            )}
+   358→            {product.images.length > 1 && (
+   359→              <>
+   360→                {selectedImage > 0 && (
+   361→                  <button
+   362→                    onClick={() => setSelectedImage(i => i - 1)}
+   363→                    className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-md opacity-0 md:opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity sm:hidden"
+   364→                    aria-label="Previous image"
+   365→                  >
+   366→                    <ChevronRight className="h-4 w-4 rotate-180" />
+   367→                  </button>
+   368→                )}
+   369→                {selectedImage < product.images.length - 1 && (
+   370→                  <button
+   371→                    onClick={() => setSelectedImage(i => i + 1)}
+   372→                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center shadow-md opacity-0 md:opacity-0 hover:opacity-100 focus:opacity-100 transition-opacity sm:hidden"
+   373→                    aria-label="Next image"
+   374→                  >
+   375→                    <ChevronRight className="h-4 w-4" />
+   376→                  </button>
+   377→                )}
+   378→              </>
+   379→            )}
+   380→          </div>
+   381→
+   382→          {/* Thumbnail strip */}
+   383→          {product.images.length > 1 && (
+   384→            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+   385→              {product.images.map((img, i) => (
+   386→                <button
+   387→                  key={i}
+   388→                  onClick={() => setSelectedImage(i)}
+   389→                  className={cn(
+   390→                    'w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden shrink-0 border-2 transition-all duration-200',
+   391→                    i === selectedImage
+   392→                      ? 'border-primary ring-2 ring-primary/30 shadow-md'
+   393→                      : 'border-transparent opacity-60 hover:opacity-100 hover:border-border'
+   394→                  )}
+   395→                >
+   396→                  <img src={img} alt="" className="w-full h-full object-cover" />
+   397→                </button>
+   398→              ))}
+   399→            </div>
+   400→          )}
+   401→        </div>
+   402→
+   403→        {/* ─── Product Info ─────────────────────────────── */}
+   404→        <div className="flex flex-col">
+   405→          <div className="flex items-start justify-between gap-4">
+   406→            <div className="flex-1 min-w-0">
+   407→              <Badge variant="secondary" className="mb-3 rounded-full text-xs">
+   408→                {product.category.name}
+   409→              </Badge>
+   410→              <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{product.name}</h1>
+   411→            </div>
+   412→
+   413→            {/* Wishlist Button */}
+   414→            <motion.button
+   415→              onClick={() => toggleWishlist(product.id)}
+   416→              className={cn(
+   417→                'shrink-0 h-11 w-11 rounded-full border-2 flex items-center justify-center transition-colors mt-1',
+   418→                wishlisted
+   419→                  ? 'border-primary bg-primary/10 text-primary'
+   420→                  : 'border-border text-muted-foreground hover:border-primary/50 hover:text-primary'
+   421→              )}
+   422→              whileTap={{ scale: 0.85 }}
+   423→              aria-label={wishlisted ? 'Remove from wishlist' : 'Add to wishlist'}
+   424→            >
+   425→              <motion.div
+   426→                animate={wishlisted ? { scale: [1, 1.3, 1], rotate: [0, -10, 0] } : { scale: 1, rotate: 0 }}
+   427→                transition={{ duration: 0.35, ease: 'easeInOut' }}
+   428→              >
+   429→                <Heart
+   430→                  className="h-5 w-5"
+   431→                  fill={wishlisted ? 'currentColor' : 'none'}
+   432→                  strokeWidth={wishlisted ? 0 : 2}
+   433→                />
+   434→              </motion.div>
+   435→            </motion.button>
+   436→          </div>
+   437→
+   438→          {/* Price */}
+   439→          <div className="flex items-baseline gap-3 mt-3 mb-4">
+   440→            <AnimatePresence mode="wait">
+   441→              <motion.span
+   442→                key={currentPrice}
+   443→                className="text-2xl sm:text-3xl font-bold text-primary"
+   444→                initial={priceAnimating ? { y: 10, opacity: 0 } : false}
+   445→                animate={{ y: 0, opacity: 1 }}
+   446→                exit={priceAnimating ? { y: -10, opacity: 0 } : false}
+   447→                transition={{ duration: 0.25 }}
+   448→              >
+   449→                ৳{currentPrice.toLocaleString()}
+   450→              </motion.span>
+   451→            </AnimatePresence>
+   452→            {product.hasDiscount && (
+   453→              <span className="text-lg text-muted-foreground line-through">
+   454→                ৳{product.price.toLocaleString()}
+   455→              </span>
+   456→            )}
+   457→            {product.hasDiscount && (
+   458→              <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs rounded-full">
+   459→                Save ৳{(product.price - product.effectivePrice).toLocaleString()}
+   460→              </Badge>
+   461→            )}
+   462→          </div>
+   463→
+   464→          {/* Stock Status with progress bar */}
+   465→          <div className="mb-6">
+   466→            <div className="flex items-center justify-between mb-2">
+   467→              <div className="flex items-center gap-2">
+   468→                {currentStock > 0 ? (
+   469→                  <>
+   470→                    <span className="relative flex h-2.5 w-2.5">
+   471→                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+   472→                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+   473→                    </span>
+   474→                    <span className="text-sm font-medium text-emerald-600">In Stock</span>
+   475→                    {currentStock < 10 && (
+   476→                      <span className="text-xs text-amber-600">— Order now, limited availability</span>
+   477→                    )}
+   478→                  </>
+   479→                ) : (
+   480→                  <>
+   481→                    <span className="h-2.5 w-2.5 rounded-full bg-destructive" />
+   482→                    <span className="text-sm font-medium text-destructive">Out of Stock</span>
+   483→                    <button
+   484→                      onClick={handleNotifyMe}
+   485→                      className="ml-2 text-xs font-medium text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
+   486→                    >
+   487→                      Notify Me
+   488→                    </button>
+   489→                  </>
+   490→                )}
+   491→              </div>
+   492→              {currentStock > 0 && currentStock <= 20 && (
+   493→                <span className="text-xs text-muted-foreground">{currentStock} left</span>
+   494→              )}
+   495→            </div>
+   496→            {currentStock > 0 && (
+   497→              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+   498→                <motion.div
+   499→                  className={cn(
+   500→                    'h-full rounded-full',
+   501→                    currentStock < 5 ? 'bg-red-400' : currentStock < 10 ? 'bg-amber-400' : 'bg-emerald-400'
+   502→                  )}
+   503→                  initial={{ width: 0 }}
+   504→                  animate={{ width: `${stockPercent}%` }}
+   505→                  transition={{ duration: 0.8, ease: 'easeOut', delay: 0.3 }}
+   506→                />
+   507→              </div>
+   508→            )}
+   509→          </div>
+   510→
+   511→          <Separator className="mb-6" />
+   512→
+   513→          {/* ─── Size Selection ──────────────────────────── */}
+   514→          {hasSizes && (
+   515→            <div className="mb-6">
+   516→              <div className="flex items-center gap-2 mb-3">
+   517→                <h3 className="text-sm font-semibold">Size</h3>
+   518→                {selectedVariantObj?.size && (
+   519→                  <span className="text-sm text-muted-foreground">
+   520→                    : {selectedVariantObj.size}
+   521→                  </span>
+   522→                )}
+   523→                <Dialog open={sizeGuideOpen} onOpenChange={setSizeGuideOpen}>
+   524→                  <DialogTrigger asChild>
+   525→                    <button className="flex items-center gap-1 text-xs font-medium text-primary hover:text-primary/80 transition-colors ml-auto">
+   526→                      <Ruler className="h-3.5 w-3.5" />
+   527→                      Size Guide
+   528→                    </button>
+   529→                  </DialogTrigger>
+   530→                  <DialogContent className="sm:max-w-lg">
+   531→                    <DialogHeader>
+   532→                      <DialogTitle className="flex items-center gap-2">
+   533→                        <Ruler className="h-5 w-5 text-primary" />
+   534→                        Size Guide — {isShoesCategory ? 'Shoes' : 'Bags'}
+   535→                      </DialogTitle>
+   536→                    </DialogHeader>
+   537→                    <div className="mt-2">
+   538→                      <p className="text-xs text-muted-foreground mb-4">
+   539→                        {isShoesCategory
+   540→                          ? 'Measure your foot length in cm and find your corresponding size below.'
+   541→                          : 'Use the measurements below to find your perfect bag size.'}
+   542→                      </p>
+   543→                      <SizeGuideContent isShoes={isShoesCategory} />
+   544→                    </div>
+   545→                  </DialogContent>
+   546→                </Dialog>
+   547→              </div>
+   548→              <div className="flex flex-wrap gap-2">
+   549→                {uniqueSizes.map(size => {
+   550→                  const sizeVariants = product.variants.filter(v => v.size === size);
+   551→                  const isActive = selectedVariantObj?.size === size;
+   552→                  const allOutOfStock = sizeVariants.every(v => v.stock === 0);
+   553→                  return (
+   554→                    <button
+   555→                      key={size}
+   556→                      onClick={() => { if (!allOutOfStock) { const v = product.variants.find(vr => vr.size === size && vr.stock > 0); if (v) handleVariantSelect(v.id); } }}
+   557→                      disabled={allOutOfStock}
+   558→                      className={cn(
+   559→                        'h-11 px-5 rounded-full border-2 text-sm font-medium transition-all duration-200 relative',
+   560→                        isActive
+   561→                          ? 'border-primary bg-primary/10 text-primary shadow-sm'
+   562→                          : 'border-border hover:border-primary/50 text-foreground',
+   563→                        allOutOfStock && 'opacity-40 cursor-not-allowed line-through text-muted-foreground'
+   564→                      )}
+   565→                    >
+   566→                      {size}
+   567→                      {allOutOfStock && (
+   568→                        <span className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-muted-foreground text-[9px] text-background flex items-center justify-center">
+   569→                          ✕
+   570→                        </span>
+   571→                      )}
+   572→                    </button>
+   573→                  );
+   574→                })}
+   575→              </div>
+   576→            </div>
+   577→          )}
+   578→
+   579→          {/* ─── Color Selection ─────────────────────────── */}
+   580→          {hasColors && (
+   581→            <div className="mb-6">
+   582→              <h3 className="text-sm font-semibold mb-3">
+   583→                Color
+   584→                {selectedVariantObj?.color && (
+   585→                  <span className="font-normal text-muted-foreground">: {selectedVariantObj.color}</span>
+   586→                )}
+   587→              </h3>
+   588→              <div className="flex flex-wrap gap-2">
+   589→                {uniqueColors.map(color => {
+   590→                  const isActive = selectedVariantObj?.color === color;
+   591→                  const colorVariant = product.variants.find(v => v.color === color && v.stock > 0);
+   592→                  const isOutOfStock = !product.variants.some(v => v.color === color && v.stock > 0);
+   593→                  return (
+   594→                    <button
+   595→                      key={color}
+   596→                      onClick={() => { if (colorVariant) handleVariantSelect(colorVariant.id); }}
+   597→                      disabled={isOutOfStock}
+   598→                      className={cn(
+   599→                        'h-11 px-4 rounded-full border-2 text-sm font-medium transition-all duration-200 flex items-center gap-2',
+   600→                        isActive
+   601→                          ? 'border-primary bg-primary/10 text-primary shadow-sm'
+   602→                          : 'border-border hover:border-primary/50 text-foreground',
+   603→                        isOutOfStock && 'opacity-40 cursor-not-allowed line-through text-muted-foreground'
+   604→                      )}
+   605→                    >
+   606→                      <ColorSwatch colorName={color} />
+   607→                      {color}
+   608→                    </button>
+   609→                  );
+   610→                })}
+   611→              </div>
+   612→            </div>
+   613→          )}
+   614→
+   615→          {/* ─── Quantity ────────────────────────────────── */}
+   616→          {currentStock > 0 && (
+   617→            <div className="mb-6">
+   618→              <h3 className="text-sm font-semibold mb-3">Quantity</h3>
+   619→              <div className="inline-flex items-center border rounded-full">
+   620→                <button
+   621→                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+   622→                  className="h-10 w-10 flex items-center justify-center hover:bg-accent rounded-l-full transition-colors"
+   623→                  aria-label="Decrease quantity"
+   624→                >
+   625→                  <Minus className="h-4 w-4" />
+   626→                </button>
+   627→                <span className="h-10 w-12 flex items-center justify-center text-sm font-medium border-x tabular-nums">
+   628→                  {quantity}
+   629→                </span>
+   630→                <button
+   631→                  onClick={() => setQuantity(Math.min(currentStock, quantity + 1))}
+   632→                  className="h-10 w-10 flex items-center justify-center hover:bg-accent rounded-r-full transition-colors"
+   633→                  aria-label="Increase quantity"
+   634→                >
+   635→                  <Plus className="h-4 w-4" />
+   636→                </button>
+   637→              </div>
+   638→            </div>
+   639→          )}
+   640→
+   641→          {/* ─── CTA Buttons ────────────────────────────── */}
+   642→          <div className="space-y-3 mb-6">
+   643→            <div className="flex gap-3 relative">
+   644→              {/* Confetti overlay */}
+   645→              <AnimatePresence>
+   646→                {showConfetti && (
+   647→                  <>
+   648→                    {Array.from({ length: 12 }).map((_, i) => (
+   649→                      <ConfettiParticle key={i} index={i} />
+   650→                    ))}
+   651→                  </>
+   652→                )}
+   653→              </AnimatePresence>
+   654→
+   655→              <Button
+   656→                size="lg"
+   657→                className="flex-1 rounded-full h-13 text-base font-semibold relative overflow-hidden"
+   658→                onClick={handleAddToCart}
+   659→                disabled={currentStock === 0}
+   660→              >
+   661→                <AnimatePresence mode="wait">
+   662→                  {added ? (
+   663→                    <motion.span
+   664→                      key="done"
+   665→                      initial={{ opacity: 0, scale: 0.8 }}
+   666→                      animate={{ opacity: 1, scale: 1 }}
+   667→                      exit={{ opacity: 0, scale: 0.8 }}
+   668→                      className="flex items-center gap-2"
+   669→                    >
+   670→                      <motion.div
+   671→                        initial={{ scale: 0 }}
+   672→                        animate={{ scale: 1 }}
+   673→                        transition={{ type: 'spring', stiffness: 300, delay: 0.1 }}
+   674→                      >
+   675→                        <Check className="h-5 w-5" />
+   676→                      </motion.div>
+   677→                      Added to Bag!
+   678→                    </motion.span>
+   679→                  ) : (
+   680→                    <motion.span
+   681→                      key="add"
+   682→                      initial={{ opacity: 0 }}
+   683→                      animate={{ opacity: 1 }}
+   684→                      exit={{ opacity: 0 }}
+   685→                      className="flex items-center gap-2"
+   686→                    >
+   687→                      <ShoppingBag className="h-5 w-5" />
+   688→                      Add to Bag
+   689→                    </motion.span>
+   690→                  )}
+   691→                </AnimatePresence>
+   692→              </Button>
+   693→
+   694→              <Button
+   695→                size="lg"
+   696→                variant="outline"
+   697→                className="rounded-full h-13 px-6 text-base font-semibold gap-2"
+   698→                onClick={handleBuyNow}
+   699→                disabled={currentStock === 0}
+   700→              >
+   701→                Buy Now
+   702→                <ArrowRight className="h-4 w-4" />
+   703→              </Button>
+   704→            </div>
+   705→
+   706→            {/* Delivery estimate + share */}
+   707→            <div className="flex items-center justify-between">
+   708→              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+   709→                <Clock className="h-3.5 w-3.5" />
+   710→                <span>Estimated delivery: 3-5 business days</span>
+   711→              </div>
+   712→              <button
+   713→                onClick={handleShare}
+   714→                className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+   715→              >
+   716→                <Share2 className="h-3.5 w-3.5" />
+   717→                Share
+   718→              </button>
+   719→            </div>
+   720→          </div>
+   721→
+   722→          <Separator className="mb-6" />
+   723→
+   724→          {/* ─── Tabbed Product Info ────────────────────── */}
+   725→          <div className="mb-6">
+   726→            <div className="flex gap-0 border-b border-border" role="tablist">
+   727→              {tabs.map(tab => (
+   728→                <button
+   729→                  key={tab.key}
+   730→                  role="tab"
+   731→                  aria-selected={activeTab === tab.key}
+   732→                  onClick={() => setActiveTab(tab.key)}
+   733→                  className={cn(
+   734→                    'relative px-4 py-2.5 text-sm font-medium transition-colors',
+   735→                    activeTab === tab.key ? 'text-foreground' : 'text-muted-foreground hover:text-foreground/80'
+   736→                  )}
+   737→                >
+   738→                  {tab.label}
+   739→                  {activeTab === tab.key && (
+   740→                    <motion.div
+   741→                      layoutId="product-tab-indicator"
+   742→                      className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full"
+   743→                      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+   744→                    />
+   745→                  )}
+   746→                </button>
+   747→              ))}
+   748→            </div>
+   749→
+   750→            <AnimatePresence mode="wait">
+   751→              <motion.div
+   752→                key={activeTab}
+   753→                initial={{ opacity: 0, y: 8 }}
+   754→                animate={{ opacity: 1, y: 0 }}
+   755→                exit={{ opacity: 0, y: -8 }}
+   756→                transition={{ duration: 0.2 }}
+   757→                className="pt-4"
+   758→              >
+   759→                {activeTab === 'description' && (
+   760→                  <p className="text-sm text-muted-foreground leading-relaxed whitespace-pre-line">
+   761→                    {product.description}
+   762→                  </p>
+   763→                )}
+   764→
+   765→                {activeTab === 'details' && (
+   766→                  <div className="rounded-lg border overflow-hidden">
+   767→                    <table className="w-full text-sm">
+   768→                      <tbody>
+   769→                        <tr className="border-b border-border/50">
+   770→                          <td className="py-2.5 px-4 font-medium text-muted-foreground bg-muted/30 w-1/3">Category</td>
+   771→                          <td className="py-2.5 px-4">{product.category.name}</td>
+   772→                        </tr>
+   773→                        <tr className="border-b border-border/50">
+   774→                          <td className="py-2.5 px-4 font-medium text-muted-foreground bg-muted/30">Tags</td>
+   775→                          <td className="py-2.5 px-4">
+   776→                            <div className="flex flex-wrap gap-1.5">
+   777→                              {product.tags.map(tag => (
+   778→                                <Badge key={tag} variant="secondary" className="text-xs rounded-full">{tag}</Badge>
+   779→                              ))}
+   780→                            </div>
+   781→                          </td>
+   782→                        </tr>
+   783→                        <tr>
+   784→                          <td className="py-2.5 px-4 font-medium text-muted-foreground bg-muted/30">SKU</td>
+   785→                          <td className="py-2.5 px-4 font-mono text-xs">{product.variants[0]?.sku || 'N/A'}</td>
+   786→                        </tr>
+   787→                      </tbody>
+   788→                    </table>
+   789→                  </div>
+   790→                )}
+   791→
+   792→                {activeTab === 'shipping' && (
+   793→                  <div className="space-y-4">
+   794→                    <div className="flex gap-3 p-3 rounded-lg bg-muted/30">
+   795→                      <Truck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+   796→                      <div>
+   797→                        <p className="text-sm font-medium">Free Shipping</p>
+   798→                        <p className="text-xs text-muted-foreground">On all orders over ৳5,000</p>
+   799→                      </div>
+   800→                    </div>
+   801→                    <div className="flex gap-3 p-3 rounded-lg bg-muted/30">
+   802→                      <Package className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+   803→                      <div>
+   804→                        <p className="text-sm font-medium">Inside Dhaka</p>
+   805→                        <p className="text-xs text-muted-foreground">3-5 business days delivery</p>
+   806→                      </div>
+   807→                    </div>
+   808→                    <div className="flex gap-3 p-3 rounded-lg bg-muted/30">
+   809→                      <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+   810→                      <div>
+   811→                        <p className="text-sm font-medium">Outside Dhaka</p>
+   812→                        <p className="text-xs text-muted-foreground">5-7 business days delivery</p>
+   813→                      </div>
+   814→                    </div>
+   815→                  </div>
+   816→                )}
+   817→              </motion.div>
+   818→            </AnimatePresence>
+   819→          </div>
+   820→
+   821→          <Separator className="mb-6" />
+   822→
+   823→          {/* ─── Trust Features Bar ─────────────────────── */}
+   824→          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-muted/40 rounded-xl border border-border/50">
+   825→            {[
+   826→              { icon: Truck, label: 'Free Delivery', desc: 'Orders over ৳5,000' },
+   827→              { icon: RefreshCw, label: 'Easy Returns', desc: '7-day return policy' },
+   828→              { icon: Shield, label: 'Authentic', desc: '100% genuine products' },
+   829→              { icon: Sparkles, label: 'Premium Quality', desc: 'Curated collection' },
+   830→            ].map(f => (
+   831→              <div key={f.label} className="flex items-start gap-2.5 sm:flex-col sm:items-center sm:text-center">
+   832→                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+   833→                  <f.icon className="h-4 w-4 text-primary" />
+   834→                </div>
+   835→                <div>
+   836→                  <p className="text-xs font-semibold leading-tight">{f.label}</p>
+   837→                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{f.desc}</p>
+   838→                </div>
+   839→              </div>
+   840→            ))}
+   841→          </div>
+   842→        </div>
+   843→      </div>
+   844→
+   845→      {/* ─── Related Products ──────────────────────────── */}
+   846→      {related.length > 0 && (
+   847→        <section className="mt-12 sm:mt-16">
+   848→          <div className="flex items-center gap-3 mb-6">
+   849→            <div className="h-px flex-1 bg-border" />
+   850→            <h2 className="text-xl sm:text-2xl font-bold text-center whitespace-nowrap flex items-center gap-2">
+   851→              <Sparkles className="h-5 w-5 text-primary" />
+   852→              You May Also Like
+   853→              <Sparkles className="h-5 w-5 text-primary" />
+   854→            </h2>
+   855→            <div className="h-px flex-1 bg-border" />
+   856→          </div>
+   857→          <div className="flex gap-3 sm:gap-4 overflow-x-auto pb-2 scrollbar-none sm:grid sm:grid-cols-2 lg:grid-cols-4 sm:overflow-visible">
+   858→            {related.map(p => (
+   859→              <div key={p.id} className="shrink-0 w-[calc(50%-6px)] sm:w-auto sm:shrink sm:grow">
+   860→                <ProductCard product={p} />
+   861→              </div>
+   862→            ))}
+   863→          </div>
+   864→        </section>
+   865→      )}
+   866→    </div>
+   867→  );
+   868→}
+   869→
+   870→/* ─── Color Swatch Helper ─────────────────────────────── */
+   871→const COLOR_MAP: Record<string, string> = {
+   872→  'black': '#000000',
+   873→  'white': '#ffffff',
+   874→  'red': '#ef4444',
+   875→  'blue': '#3b82f6',
+   876→  'green': '#22c55e',
+   877→  'pink': '#ec4899',
+   878→  'purple': '#a855f7',
+   879→  'brown': '#92400e',
+   880→  'beige': '#d4b896',
+   881→  'cream': '#fffdd0',
+   882→  'nude': '#e8c4a0',
+   883→  'tan': '#d2b48c',
+   884→  'gold': '#d4a017',
+   885→  'silver': '#c0c0c0',
+   886→  'grey': '#6b7280',
+   887→  'gray': '#6b7280',
+   888→  'navy': '#1e3a5f',
+   889→  'burgundy': '#800020',
+   890→  'maroon': '#800000',
+   891→  'olive': '#808000',
+   892→  'teal': '#008080',
+   893→  'coral': '#ff7f50',
+   894→  'peach': '#ffcba4',
+   895→  'ivory': '#fffff0',
+   896→  'champagne': '#f7e7ce',
+   897→  'rose gold': '#b76e79',
+   898→};
+   899→
+   900→function ColorSwatch({ colorName }: { colorName: string }) {
+   901→  const hex = COLOR_MAP[colorName.toLowerCase()] || '#94a3b8';
+   902→  const isLight = ['#ffffff', '#fffdd0', '#fffff0', '#ffcba4', '#f7e7ce', '#d4b896', '#e8c4a0', '#d2b48c'].includes(hex);
+   903→
+   904→  return (
+   905→    <span
+   906→      className="h-4 w-4 rounded-full border border-border/50 shrink-0"
+   907→      style={{ backgroundColor: hex, boxShadow: isLight ? 'inset 0 0 0 1px rgba(0,0,0,0.1)' : undefined }}
+   908→    />
+   909→  );
+   910→}

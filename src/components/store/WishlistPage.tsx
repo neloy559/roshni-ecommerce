@@ -399,7 +399,7 @@ export function WishlistPage() {
                   exit={{ opacity: 0, scale: 0.9, y: -10 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="group border-0 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-white">
+                  <Card className="group border-0 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden bg-card">
                     <div className="relative aspect-[3/4] overflow-hidden bg-muted">
                       <img
                         src={product.images[0]}
@@ -423,7 +423,7 @@ export function WishlistPage() {
                         <div className="absolute inset-x-0 bottom-0 p-2.5 flex gap-2 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
                           <Button
                             size="sm"
-                            className="flex-1 rounded-full bg-white/95 text-foreground hover:bg-white shadow-lg backdrop-blur-sm font-medium gap-1.5 text-[12px] h-8"
+                            className="flex-1 rounded-full bg-card/95 text-foreground hover:bg-card shadow-lg backdrop-blur-sm font-medium gap-1.5 text-[12px] h-8"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleMoveToCart(product);
@@ -434,7 +434,7 @@ export function WishlistPage() {
                           </Button>
                           <Button
                             size="icon"
-                            className="h-8 w-8 rounded-full bg-white/95 hover:bg-white shadow-lg backdrop-blur-sm shrink-0"
+                            className="h-8 w-8 rounded-full bg-card/95 hover:bg-card shadow-lg backdrop-blur-sm shrink-0"
                             onClick={(e) => {
                               e.stopPropagation();
                               setQuickViewProduct(product);
@@ -451,7 +451,7 @@ export function WishlistPage() {
                           e.stopPropagation();
                           handleRemoveFromWishlist(product.id);
                         }}
-                        className="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-white/90 flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all duration-200 shadow-sm group/remove"
+                        className="absolute top-3 right-3 z-20 h-8 w-8 rounded-full bg-card/90 flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-950/50 hover:text-red-500 transition-all duration-200 shadow-sm group/remove"
                         aria-label="Remove from wishlist"
                       >
                         <X className="h-3.5 w-3.5 group-hover/remove:rotate-90 transition-transform duration-200" />
@@ -498,7 +498,7 @@ export function WishlistPage() {
               {recentlyViewedProducts.map((product) => (
                 <Card
                   key={product.id}
-                  className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer bg-white"
+                  className="group border-0 shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer bg-card"
                   onClick={() => navigate('product', { slug: product.slug })}
                 >
                   <div className="relative aspect-square overflow-hidden bg-muted">
