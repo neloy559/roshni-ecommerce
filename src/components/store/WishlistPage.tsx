@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from '@/lib/api-config';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Product {
@@ -219,7 +220,7 @@ export function WishlistPage() {
 
     const fetchWishlist = async () => {
       try {
-        const res = await fetch('/api/products?limit=100');
+        const res = await fetch(getApiUrl('/api/products?limit=100');
         const data = await res.json();
         const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => ({
           ...p,
@@ -245,7 +246,7 @@ export function WishlistPage() {
     if (recentlyViewed.length === 0) return;
     const fetchRecent = async () => {
       try {
-        const res = await fetch('/api/products?limit=100');
+        const res = await fetch(getApiUrl('/api/products?limit=100');
         const data = await res.json();
         const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => ({
           ...p,

@@ -30,6 +30,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from '@/lib/api-config';
 
 interface Category {
   id: string;
@@ -101,7 +102,7 @@ export function Header() {
 
   // Fetch categories
   useEffect(() => {
-    fetch('/api/categories')
+    fetch(getApiUrl('/api/categories')
       .then((r) => r.json())
       .then((data: Category[]) => setCategories(data))
       .catch(() => {});
@@ -130,7 +131,7 @@ export function Header() {
     setSearchLoading(true);
     searchDebounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`);
+        const res = await fetch(getApiUrl(`/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`);
         const data = await res.json();
         const products: SearchResult[] = (data.products || []).map((p: Record<string, unknown>) => ({
           ...p,

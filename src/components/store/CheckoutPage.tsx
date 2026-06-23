@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from '@/lib/api-config';
 
 const STEP_CONFIG = [
   { key: 'address', label: 'Address', icon: MapPin },
@@ -245,7 +246,7 @@ export function CheckoutPage() {
         image: item.image,
       }));
 
-      const res = await fetch('/api/orders', {
+      const res = await fetch(getApiUrl('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

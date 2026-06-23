@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getApiUrl } from '@/lib/api-config';
 
 export function CartPage() {
   const { cartItems, cartSubtotal, updateCartQuantity, removeFromCart, clearCart, navigate } = useAppStore();
@@ -33,7 +34,7 @@ export function CartPage() {
     setPromoLoading(true);
     setPromoError('');
     try {
-      const res = await fetch('/api/promo', {
+      const res = await fetch(getApiUrl('/api/promo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: promoCode, subtotal: cartSubtotal }),

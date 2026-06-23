@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getApiUrl } from '@/lib/api-config';
 
 interface Product {
   id: string; name: string; slug: string; description: string;
@@ -148,7 +149,7 @@ export function ProductDetailPage() {
     const slug = pageParams.slug;
     if (!slug) { navigate('products'); return; }
 
-    fetch(`/api/products/${slug}`).then(r => r.json()).then(data => {
+    fetch(getApiUrl(`/api/products/${slug}`).then(r => r.json()).then(data => {
       if (cancelled) return;
       setProduct(data.product);
       setRelated(data.related || []);

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { getApiUrl } from '@/lib/api-config';
 
 function SuccessCheckmark() {
   return (
@@ -197,7 +198,7 @@ export function LoginPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth', {
+      const res = await fetch(getApiUrl('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', email, phone, password }),
@@ -402,7 +403,7 @@ export function RegisterPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/auth', {
+      const res = await fetch(getApiUrl('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'register', name, phone, email, password }),

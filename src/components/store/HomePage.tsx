@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppStore } from '@/lib/store';
+import { getApiUrl } from '@/lib/api-config';
 import {
   ArrowRight, ChevronLeft, ChevronRight, Sparkles, TrendingUp, Clock,
   Heart, Star, Truck, Shield, RefreshCw, CheckCircle, Quote, ShoppingBag,
@@ -235,10 +236,10 @@ export function HomePage() {
   // Fetch data
   useEffect(() => {
     Promise.all([
-      fetch('/api/banners').then(r => r.json()),
-      fetch('/api/categories').then(r => r.json()),
-      fetch('/api/products?sort=popular&limit=8').then(r => r.json()),
-      fetch('/api/products?new=true&limit=8').then(r => r.json()),
+      fetch(getApiUrl('/api/banners')).then(r => r.json()),
+      fetch(getApiUrl('/api/categories')).then(r => r.json()),
+      fetch(getApiUrl('/api/products?sort=popular&limit=8')).then(r => r.json()),
+      fetch(getApiUrl('/api/products?new=true&limit=8')).then(r => r.json()),
     ]).then(([b, c, t, n]) => {
       setBanners(b);
       setCategories(c);

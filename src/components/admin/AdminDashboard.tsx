@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { getApiUrl } from '@/lib/api-config';
 
 type AdminTab = 'overview' | 'products' | 'categories' | 'orders' | 'banners' | 'settings';
 
@@ -36,7 +37,7 @@ export function AdminDashboard() {
 
   useEffect(() => {
     if (!user || !isAdmin()) { navigate('login'); return; }
-    fetch('/api/admin/stats').then(r => r.json()).then(s => { setStats(s); setLoading(false); });
+    fetch(getApiUrl('/api/admin/stats').then(r => r.json()).then(s => { setStats(s); setLoading(false); });
   }, []);
 
   if (!user || !isAdmin()) return null;
@@ -166,22 +167,22 @@ function ProductsTab() {
   const [categories, setCategories] = useState<any[]>([]);
   const [form, setForm] = useState({ name: '', slug: '', description: '', price: '', discountPrice: '', stock: '', images: '', categoryId: '', status: 'active', tags: '', isTrending: false, isNewArrival: true });
 
-  const fetchProducts = () => { fetch('/api/admin/products').then(r => r.json()).then(d => { setProducts(d); setLoading(false); }); };
-  useEffect(() => { fetchProducts(); fetch('/api/categories').then(r => r.json()).then(setCategories); }, []);
+  const fetchProducts = () => { fetch(getApiUrl('/api/admin/products').then(r => r.json()).then(d => { setProducts(d); setLoading(false); }); };
+  useEffect(() => { fetchProducts(); fetch(getApiUrl('/api/categories').then(r => r.json()).then(setCategories); }, []);
 
   const filtered = products.filter(p => !search || p.name.toLowerCase().includes(search.toLowerCase()));
 
   const handleSave = async () => {
     const body = { ...form, price: parseFloat(form.price), discountPrice: form.discountPrice ? parseFloat(form.discountPrice) : null, stock: parseInt(form.stock), images: form.images.split('\n').filter(Boolean), categoryId: form.categoryId, tags: form.tags.split(',').map(t => t.trim()).filter(Boolean) };
     if (editId) {
-      await fetch('/api/admin/products', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editId, ...body }) });
+      await fetch(getApiUrl('/api/admin/products', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: editId, ...body }) });
     } else {
-      await fetch('/api/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      await fetch(getApiUrl('/api/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     }
     setDialogOpen(false); setEditId(null); resetForm(); fetchProducts();
   };
 
-  const handleDelete = async (id: string) => { if (confirm('Delete this product?')) { await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' }); fetchProducts(); } };
+  const handleDelete = async (id: string) => { if (confirm('Delete this product?')) { await fetch(getApiUrl(`/api/admin/products?id=${id}`, { method: 'DELETE' }); fetchProducts(); } };
   const handleEdit = (p: any) => { setEditId(p.id); setForm({ name: p.name, slug: p.slug, description: p.description, price: String(p.price), discountPrice: p.discountPrice ? String(p.discountPrice) : '', stock: String(p.stock), images: (p.images || []).join('\n'), categoryId: p.categoryId, status: p.status, tags: (p.tags || []).join(', '), isTrending: p.isTrending, isNewArrival: p.isNewArrival }); setDialogOpen(true); };
   const resetForm = () => setForm({ name: '', slug: '', description: '', price: '', discountPrice: '', stock: '', images: '', categoryId: '', status: 'active', tags: '', isTrending: false, isNewArrival: true });
 
@@ -246,15 +247,15 @@ function CategoriesTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', slug: '', image: '', parentId: '', order: '0' });
 
-  const fetchCats = () => { fetch('/api/admin/categories').then(r => r.json()).then(setCategories); };
+  const fetchCats = () => { fetch(getApiUrl('/api/admin/categories').then(r => r.json()).then(setCategories); };
   useEffect(fetchCats, []);
 
   const handleSave = async () => {
-    await fetch('/api/admin/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, order: parseInt(form.order) }) });
+    await fetch(getApiUrl('/api/admin/categories', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, order: parseInt(form.order) }) });
     setDialogOpen(false); setForm({ name: '', slug: '', image: '', parentId: '', order: '0' }); fetchCats();
   };
 
-  const handleDelete = async (id: string) => { if (confirm('Delete?')) { await fetch(`/api/admin/categories?id=${id}`, { method: 'DELETE' }); fetchCats(); } };
+  const handleDelete = async (id: string) => { if (confirm('Delete?')) { await fetch(getApiUrl(`/api/admin/categories?id=${id}`, { method: 'DELETE' }); fetchCats(); } };
 
   return (
     <div className="space-y-4">
@@ -308,13 +309,13 @@ function OrdersTab() {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    fetch('/api/admin/orders').then(r => r.json()).then(d => { setOrders(d); setLoading(false); });
+    fetch(getApiUrl('/api/admin/orders').then(r => r.json()).then(d => { setOrders(d); setLoading(false); });
   }, []);
 
   const filtered = orders.filter((o: any) => !search || o.orderNumber.toLowerCase().includes(search.toLowerCase()));
 
   const updateStatus = async (orderId: string, status: string) => {
-    await fetch('/api/admin/orders', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, status }) });
+    await fetch(getApiUrl('/api/admin/orders', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId, status }) });
     setOrders(orders.map((o: any) => o.id === orderId ? { ...o, status } : o));
   };
 
@@ -363,15 +364,15 @@ function BannersTab() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ image: '', title: '', subtitle: '', linkTarget: '', order: '0', isActive: true });
 
-  const fetchBanners = () => { fetch('/api/admin/banners').then(r => r.json()).then(setBanners); };
+  const fetchBanners = () => { fetch(getApiUrl('/api/admin/banners').then(r => r.json()).then(setBanners); };
   useEffect(fetchBanners, []);
 
   const handleSave = async () => {
-    await fetch('/api/admin/banners', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, order: parseInt(form.order) }) });
+    await fetch(getApiUrl('/api/admin/banners', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...form, order: parseInt(form.order) }) });
     setDialogOpen(false); setForm({ image: '', title: '', subtitle: '', linkTarget: '', order: '0', isActive: true }); fetchBanners();
   };
 
-  const handleDelete = async (id: string) => { if (confirm('Delete?')) { await fetch(`/api/admin/banners?id=${id}`, { method: 'DELETE' }); fetchBanners(); } };
+  const handleDelete = async (id: string) => { if (confirm('Delete?')) { await fetch(getApiUrl(`/api/admin/banners?id=${id}`, { method: 'DELETE' }); fetchBanners(); } };
 
   return (
     <div className="space-y-4">
@@ -416,11 +417,11 @@ function SettingsTab() {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetch('/api/admin/settings').then(r => r.json()).then(setSettings); }, []);
+  useEffect(() => { fetch(getApiUrl('/api/admin/settings').then(r => r.json()).then(setSettings); }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await fetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
+    await fetch(getApiUrl('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(settings) });
     setSaving(false);
   };
 
