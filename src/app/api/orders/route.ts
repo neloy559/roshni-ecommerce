@@ -1,15 +1,14 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { getAuthUser } from '@/lib/auth-api';
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) return NextResponse.json({ orders: [] });
+    const auth = await getAuthUser(req);
+    if (!auth) return NextResponse.json({ orders: [] });
 
     const orders = await db.order.findMany({
-      where: { userId },
+      where: { userId: auth.userId },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -27,48 +26,63 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const auth = await getAuthUser(req);
+    if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const body = await req.json();
-    const { items, shippingAddress, userId, total, subtotal, shippingCost, discountAmount, promoCode, paymentProvider } = body;
+    const { items, shippingAddress, total, subtotal, shippingCost, discountAmount, promoCode, paymentProvider } = body;
 
     const orderNumber = `RSH-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${String(Math.floor(Math.random() * 999) + 1).padStart(3, '0')}`;
 
-    const order = await db.order.create({
-      data: {
-        orderNumber,
-        userId: userId || null,
-        items: JSON.stringify(items),
-        shippingAddress: JSON.stringify(shippingAddress),
-        status: 'pending',
-        total,
-        subtotal,
-        shippingCost: shippingCost || 0,
-        discountAmount: discountAmount || 0,
-        promoCode: promoCode || null,
-        paymentProvider: paymentProvider || null,
-        paymentStatus: 'pending',
-      },
-    });
-
-    // Update promo code usage
-    if (promoCode) {
-      await db.promoCode.updateMany({
-        where: { code: promoCode },
-        data: { usedCount: { increment: 1 } },
-      });
-    }
-
-    // Update product stock & order count
+    // Validate stock before creating order
     for (const item of items) {
-      await db.product.update({
-        where: { id: item.productId },
-        data: { stock: { decrement: item.quantity }, orderCount: { increment: item.quantity } },
-      });
+      const product = await db.product.findUnique({ where: { id: item.productId } });
+      if (!product) {
+        return NextResponse.json({ error: `Product ${item.productId} not found` }, { status: 400 });
+      }
+      if (product.stock < item.quantity) {
+        return NextResponse.json({
+          error: `Insufficient stock for "${product.name}". Available: ${product.stock}, requested: ${item.quantity}`,
+        }, { status: 400 });
+      }
     }
 
-    // Clear cart
-    if (userId) {
-      await db.cartItem.deleteMany({ where: { userId } as never });
-    }
+    const order = await db.$transaction(async (tx) => {
+      const newOrder = await tx.order.create({
+        data: {
+          orderNumber,
+          userId: auth.userId,
+          items: JSON.stringify(items),
+          shippingAddress: JSON.stringify(shippingAddress),
+          status: 'pending',
+          total,
+          subtotal,
+          shippingCost: shippingCost || 0,
+          discountAmount: discountAmount || 0,
+          promoCode: promoCode || null,
+          paymentProvider: paymentProvider || null,
+          paymentStatus: 'pending',
+        },
+      });
+
+      if (promoCode) {
+        await tx.promoCode.updateMany({
+          where: { code: promoCode },
+          data: { usedCount: { increment: 1 } },
+        });
+      }
+
+      for (const item of items) {
+        await tx.product.update({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity }, orderCount: { increment: item.quantity } },
+        });
+      }
+
+      await tx.cartItem.deleteMany({ where: { userId: auth.userId } });
+
+      return newOrder;
+    });
 
     return NextResponse.json({ order: { ...order, items, shippingAddress }, orderNumber });
   } catch (error) {

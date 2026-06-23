@@ -42,7 +42,7 @@ function QuickViewModal({ product, open, onClose }: {
 
   const handleAddToCart = () => {
     addToCart({
-      id: `cart-${Date.now()}`, productId: product.id, variantId: null, quantity,
+      id: crypto.randomUUID(), productId: product.id, variantId: null, quantity,
       name: product.name, slug: product.slug, image: product.images[0],
       price: product.effectivePrice, originalPrice: product.price,
       hasDiscount: product.hasDiscount, variant: null, stock: product.stock ?? 99,
@@ -222,14 +222,15 @@ export function WishlistPage() {
       try {
         const res = await fetch(getApiUrl('/api/products?limit=100'));
         const data = await res.json();
-        const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => ({
-          ...p,
-          effectivePrice: p.discountPrice ?? p.price,
-          hasDiscount: p.discountPrice !== null && p.discountPrice < p.price,
-          discountPercent: p.discountPrice
-            ? Math.round(((p.price as number) - (p.discountPrice as number)) / (p.price as number) * 100)
-            : 0,
-        }));
+        const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => {
+          const dp = p.discountPrice as number | null | undefined;
+          return {
+            ...p,
+            effectivePrice: dp ?? (p.price as number),
+            hasDiscount: dp != null && dp < (p.price as number),
+            discountPercent: dp ? Math.round(((p.price as number) - dp) / (p.price as number) * 100) : 0,
+          } as Product;
+        });
         const filtered = allProducts.filter((p) => wishlistItems.includes(p.id));
         setProducts(filtered);
       } catch {
@@ -248,14 +249,15 @@ export function WishlistPage() {
       try {
         const res = await fetch(getApiUrl('/api/products?limit=100'));
         const data = await res.json();
-        const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => ({
-          ...p,
-          effectivePrice: p.discountPrice ?? p.price,
-          hasDiscount: p.discountPrice !== null && p.discountPrice < p.price,
-          discountPercent: p.discountPrice
-            ? Math.round(((p.price as number) - (p.discountPrice as number)) / (p.price as number) * 100)
-            : 0,
-        }));
+        const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => {
+          const dp = p.discountPrice as number | null | undefined;
+          return {
+            ...p,
+            effectivePrice: dp ?? (p.price as number),
+            hasDiscount: dp != null && dp < (p.price as number),
+            discountPercent: dp ? Math.round(((p.price as number) - dp) / (p.price as number) * 100) : 0,
+          } as Product;
+        });
         const filtered = allProducts.filter((p) => recentlyViewed.includes(p.slug));
         setRecentlyViewedProducts(filtered);
       } catch {
@@ -272,7 +274,7 @@ export function WishlistPage() {
 
   const handleMoveToCart = useCallback((product: Product) => {
     addToCart({
-      id: `cart-${Date.now()}`, productId: product.id, variantId: null, quantity: 1,
+      id: crypto.randomUUID(), productId: product.id, variantId: null, quantity: 1,
       name: product.name, slug: product.slug, image: product.images[0],
       price: product.effectivePrice, originalPrice: product.price,
       hasDiscount: product.hasDiscount, variant: null, stock: product.stock ?? 99,

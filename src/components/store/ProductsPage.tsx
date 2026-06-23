@@ -52,6 +52,8 @@ function FilterSidebar({
   const [localRange, setLocalRange] = useState<[number, number]>(priceRange);
   const [priceDirty, setPriceDirty] = useState(false);
 
+  useEffect(() => { setLocalRange(priceRange); }, [priceRange]);
+
   const applyPrice = () => {
     setPriceRange(localRange);
     setPriceDirty(false);

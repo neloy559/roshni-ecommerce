@@ -12,9 +12,8 @@ import { cn } from '@/lib/utils';
 import { getApiUrl } from '@/lib/api-config';
 
 export function CartPage() {
-  const { cartItems, cartSubtotal, updateCartQuantity, removeFromCart, clearCart, navigate } = useAppStore();
+  const { cartItems, cartSubtotal, updateCartQuantity, removeFromCart, clearCart, navigate, promoDiscount, setPromoDiscount } = useAppStore();
   const [promoCode, setPromoCode] = useState('');
-  const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoOpen, setPromoOpen] = useState(false);
