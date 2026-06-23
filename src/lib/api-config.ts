@@ -1,24 +1,16 @@
 // API Configuration
-// Determines whether to use Railway backend or local API routes
+// API routes are part of the same Next.js app (src/app/api/*)
+// No separate backend needed - everything runs on Vercel
 
-export const API_BASE_URL = 
-  process.env.NEXT_PUBLIC_API_URL || 
-  (typeof window !== 'undefined' && window.location.hostname === 'roshni-ecommerce.vercel.app'
-    ? 'https://roshni-ecommerce-production.up.railway.app'
-    : '');
+export const API_BASE_URL = '';
 
 /**
  * Get the full API URL for a given endpoint
  * @param endpoint - API endpoint path (e.g., '/api/products')
- * @returns Full URL or relative path
+ * @returns Relative path (API routes are on the same domain)
  */
 export function getApiUrl(endpoint: string): string {
-  // If API_BASE_URL is set, use it
-  if (API_BASE_URL) {
-    return `${API_BASE_URL}${endpoint}`;
-  }
-  
-  // Otherwise, use relative path (for local development)
+  // Use relative paths - API routes are part of the same Next.js app
   return endpoint;
 }
 
