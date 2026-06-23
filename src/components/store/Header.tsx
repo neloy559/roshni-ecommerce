@@ -19,6 +19,9 @@ import {
   LogIn,
   UserCircle,
   ShieldCheck,
+  Sun,
+  Moon,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,6 +39,13 @@ interface Category {
 }
 
 const TRENDING_SEARCHES = ['Heels', 'Tote Bag', 'Jewelry Set', 'Wedding Shoes'];
+
+interface SearchResult {
+  id: string; name: string; slug: string; price: number;
+  discountPrice: number | null; images: string[]; effectivePrice: number;
+  hasDiscount: boolean; discountPercent: number;
+  category?: { name: string };
+}
 
 function getRecentSearches(): string[] {
   if (typeof window === 'undefined') return [];
@@ -83,6 +93,11 @@ export function Header() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [announcementVisible, setAnnouncementVisible] = useState(() => !isAnnouncementDismissed());
   const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const darkMode = useAppStore((s) => s.darkMode);
+  const toggleDarkMode = useAppStore((s) => s.toggleDarkMode);
 
   // Fetch categories
   useEffect(() => {
@@ -105,6 +120,45 @@ export function Header() {
     [currentPage, pageParams.category]
   );
 
+  // Live search with debounce
+  useEffect(() => {
+    if (!searchOpen || !searchQuery.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setSearchLoading(true);
+    searchDebounceRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`);
+        const data = await res.json();
+        const products: SearchResult[] = (data.products || []).map((p: Record<string, unknown>) => ({
+          ...p,
+          effectivePrice: (p.discountPrice as number) ?? (p.price as number),
+          hasDiscount: p.discountPrice !== null && (p.discountPrice as number) < (p.price as number),
+          discountPercent: p.discountPrice
+            ? Math.round(((p.price as number) - (p.discountPrice as number)) / (p.price as number) * 100)
+            : 0,
+        }));
+        setSearchResults(products);
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => { if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current); };
+  }, [searchQuery, searchOpen]);
+
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
   // Don't show header on admin pages
   if (currentPage.startsWith('admin')) return null;
 
@@ -115,6 +169,7 @@ export function Header() {
       useAppStore.getState().navigate('products', { search: searchQuery.trim() });
       setSearchOpen(false);
       setSearchQuery('');
+      setSearchResults([]);
     }
   };
 
@@ -162,7 +217,7 @@ export function Header() {
   };
 
   const handleWishlistClick = () => {
-    useAppStore.getState().navigate('products', { wishlist: 'true' });
+    useAppStore.getState().navigate('wishlist');
   };
 
   return (
@@ -170,7 +225,9 @@ export function Header() {
       <header
         className={cn(
           'sticky top-0 z-50 w-full transition-all duration-300',
-          scrolled ? 'bg-white/95 backdrop-blur-md' : 'bg-white'
+          scrolled
+            ? darkMode ? 'bg-background/95 backdrop-blur-md border-b border-border' : 'bg-white/95 backdrop-blur-md'
+            : darkMode ? 'bg-background' : 'bg-white'
         )}
       >
         {/* Announcement Bar */}
@@ -290,7 +347,7 @@ export function Header() {
                         onMouseLeave={handleDropdownContentLeave}
                         className="absolute top-full left-1/2 -translate-x-1/2 pt-2 z-[55]"
                       >
-                        <div className="bg-white rounded-xl shadow-lg shadow-black/[0.08] border border-border/60 py-2 min-w-[200px] overflow-hidden">
+                        <div className="bg-background rounded-xl shadow-lg shadow-black/[0.08] border border-border/60 py-2 min-w-[200px] overflow-hidden">
                           {/* "All [Category]" link */}
                           <button
                             onClick={() => {
@@ -389,6 +446,39 @@ export function Header() {
                 <Search className="h-5 w-5" />
               </Button>
 
+              {/* Dark mode toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleDarkMode}
+                className="relative"
+                aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                <AnimatePresence mode="wait">
+                  {darkMode ? (
+                    <motion.div
+                      key="sun"
+                      initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                      animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                      exit={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Sun className="h-5 w-5" />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="moon"
+                      initial={{ rotate: 90, opacity: 0, scale: 0.5 }}
+                      animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                      exit={{ rotate: -90, opacity: 0, scale: 0.5 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <Moon className="h-5 w-5" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </Button>
+
               {/* User */}
               <Button
                 variant="ghost"
@@ -399,7 +489,7 @@ export function Header() {
               >
                 <User className="h-5 w-5" />
                 {user && (
-                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-primary rounded-full ring-2 ring-white" />
+                  <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 bg-primary rounded-full ring-2 ring-background" />
                 )}
               </Button>
 
@@ -416,7 +506,7 @@ export function Header() {
                   <motion.span
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
-                    className="absolute -top-1 -right-1 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white ring-2 ring-white"
+                    className="absolute -top-1 -right-1 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-pink-500 px-1 text-[10px] font-bold text-white ring-2 ring-background"
                   >
                     {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
                   </motion.span>
@@ -438,7 +528,7 @@ export function Header() {
                     initial={{ scale: 0.5 }}
                     animate={{ scale: [0.5, 1.25, 1] }}
                     transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground ring-2 ring-white"
+                    className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground ring-2 ring-background"
                   >
                     {cartCount}
                   </motion.span>
@@ -478,7 +568,7 @@ export function Header() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="bg-white w-full shadow-xl shadow-black/10 rounded-b-2xl"
+              className="bg-background w-full shadow-xl shadow-black/10 rounded-b-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="max-w-2xl mx-auto px-4 pt-4 pb-6">
@@ -499,8 +589,80 @@ export function Header() {
                   </Button>
                 </form>
 
-                {/* Suggestions area */}
-                {!searchQuery && (
+                {/* Live search results */}
+                {searchQuery.trim() ? (
+                  <div className="mt-4 max-h-[50vh] overflow-y-auto">
+                    {searchLoading ? (
+                      <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Searching...</span>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between mb-2 px-1">
+                          <p className="text-xs text-muted-foreground font-medium">
+                            {searchResults.length} result{searchResults.length !== 1 ? 's' : ''} found
+                          </p>
+                          <button
+                            onClick={() => {
+                              saveRecentSearch(searchQuery);
+                              useAppStore.getState().navigate('products', { search: searchQuery.trim() });
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                              setSearchResults([]);
+                            }}
+                            className="text-xs text-primary hover:underline"
+                          >
+                            View all results
+                          </button>
+                        </div>
+                        {searchResults.map((product) => (
+                          <button
+                            key={product.id}
+                            onClick={() => {
+                              setSearchOpen(false);
+                              setSearchQuery('');
+                              setSearchResults([]);
+                              useAppStore.getState().navigate('product', { slug: product.slug });
+                            }}
+                            className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-accent/60 transition-colors text-left group"
+                          >
+                            <div className="h-14 w-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                              <img
+                                src={product.images[0]}
+                                alt={product.name}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate text-foreground">{product.name}</p>
+                              {product.category && (
+                                <p className="text-xs text-muted-foreground mt-0.5">{product.category.name}</p>
+                              )}
+                              <div className="flex items-center gap-2 mt-1">
+                                <span className="text-sm font-semibold text-primary">৳{product.effectivePrice.toLocaleString()}</span>
+                                {product.hasDiscount && (
+                                  <span className="text-xs text-muted-foreground line-through">৳{product.price.toLocaleString()}</span>
+                                )}
+                              </div>
+                            </div>
+                            {product.hasDiscount && (
+                              <Badge className="bg-primary text-primary-foreground rounded-full px-2 py-0.5 text-[10px] font-semibold flex-shrink-0">
+                                -{product.discountPercent}%
+                              </Badge>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Search className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">No products found for &ldquo;{searchQuery}&rdquo;</p>
+                        <p className="text-xs text-muted-foreground mt-1">Try a different search term</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
                   <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
                     {/* Recent Searches */}
                     {getRecentSearches().length > 0 && (
@@ -741,6 +903,30 @@ export function Header() {
                 Admin Dashboard
               </button>
             )}
+
+            <Separator className="my-2" />
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={() => {
+                toggleDarkMode();
+              }}
+              className="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-colors flex items-center justify-between hover:bg-accent text-foreground"
+            >
+              <span className="flex items-center gap-3">
+                {darkMode ? <Sun className="h-4 w-4 shrink-0 text-amber-500" /> : <Moon className="h-4 w-4 shrink-0" />}
+                {darkMode ? 'Light Mode' : 'Dark Mode'}
+              </span>
+              <div className={cn(
+                'relative h-6 w-11 rounded-full transition-colors duration-300',
+                darkMode ? 'bg-primary' : 'bg-muted',
+              )}>
+                <div className={cn(
+                  'absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-300',
+                  darkMode ? 'translate-x-[22px]' : 'translate-x-0.5',
+                )} />
+              </div>
+            </button>
 
             <Separator className="my-2" />
 

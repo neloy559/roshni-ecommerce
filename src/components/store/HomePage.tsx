@@ -5,6 +5,7 @@ import { useAppStore } from '@/lib/store';
 import {
   ArrowRight, ChevronLeft, ChevronRight, Sparkles, TrendingUp, Clock,
   Heart, Star, Truck, Shield, RefreshCw, CheckCircle, Quote, ShoppingBag,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -51,7 +52,7 @@ function ProductCard({ product }: { product: Product }) {
   return (
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.25 }} className="flex-shrink-0 w-[calc(50%-6px)] sm:w-auto sm:flex-shrink">
       <Card
-        className="group border-0 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer bg-white"
+        className="group border-0 shadow-sm hover:shadow-xl transition-shadow duration-300 overflow-hidden cursor-pointer bg-card"
         onClick={handleCardClick}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-muted">
@@ -87,7 +88,7 @@ function ProductCard({ product }: { product: Product }) {
               'absolute top-3 right-3 z-20 h-9 w-9 rounded-full flex items-center justify-center transition-all duration-200 shadow-md',
               wishlisted
                 ? 'bg-primary text-white scale-100'
-                : 'bg-white/90 text-gray-500 hover:bg-white hover:text-primary scale-90 group-hover:scale-100',
+                : 'bg-card/90 text-muted-foreground hover:bg-card hover:text-primary scale-90 group-hover:scale-100',
             )}
           >
             <Heart className={cn('h-4 w-4', wishlisted && 'fill-current')} />
@@ -95,16 +96,28 @@ function ProductCard({ product }: { product: Product }) {
 
           {/* Add to Bag slide-up with gradient */}
           <div className="absolute inset-x-0 bottom-0 z-20">
-            <div className="h-24 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+            <div className="h-28 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
             <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out">
-              <Button
-                size="sm"
-                className="w-full rounded-full bg-white/95 text-foreground hover:bg-white shadow-lg backdrop-blur-sm font-medium gap-2"
-                onClick={handleAddToCart}
-              >
-                <ShoppingBag className="h-3.5 w-3.5" />
-                Add to Bag
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  className="flex-1 rounded-full bg-white/95 dark:bg-card/95 text-foreground hover:bg-white dark:hover:bg-card shadow-lg backdrop-blur-sm font-medium gap-1.5 h-9"
+                  onClick={handleAddToCart}
+                >
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  Add to Bag
+                </Button>
+                <Button
+                  size="icon"
+                  className="h-9 w-9 rounded-full bg-white/95 dark:bg-card/95 hover:bg-white dark:hover:bg-card shadow-lg backdrop-blur-sm shrink-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate('product', { slug: product.slug });
+                  }}
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>

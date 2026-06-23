@@ -1,6 +1,14 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
+// Check system dark mode preference
+function getInitialDarkMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  const stored = localStorage.getItem('roshni-dark-mode');
+  if (stored !== null) return stored === 'true';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
 export interface CartItemType {
   id: string;
   productId: string;
@@ -74,6 +82,11 @@ interface AppState {
   toasts: Array<{ id: string; message: string; type: 'success' | 'error' | 'info' }>;
   addToast: (message: string, type?: 'success' | 'error' | 'info') => void;
   removeToast: (id: string) => void;
+
+  // Dark mode
+  darkMode: boolean;
+  toggleDarkMode: () => void;
+  setDarkMode: (on: boolean) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -180,6 +193,18 @@ export const useAppStore = create<AppState>()(
       removeToast: (id) => {
         set({ toasts: get().toasts.filter((t) => t.id !== id) });
       },
+
+      // Dark mode
+      darkMode: getInitialDarkMode(),
+      toggleDarkMode: () => {
+        const next = !get().darkMode;
+        localStorage.setItem('roshni-dark-mode', String(next));
+        set({ darkMode: next });
+      },
+      setDarkMode: (on) => {
+        localStorage.setItem('roshni-dark-mode', String(on));
+        set({ darkMode: on });
+      },
     }),
     {
       name: 'roshni-store',
@@ -191,6 +216,7 @@ export const useAppStore = create<AppState>()(
         lastOrderNumber: state.lastOrderNumber,
         wishlistItems: state.wishlistItems,
         recentlyViewed: state.recentlyViewed,
+        darkMode: state.darkMode,
       }),
     }
   )

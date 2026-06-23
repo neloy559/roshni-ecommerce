@@ -16,6 +16,7 @@ import { OrderSuccessPage } from '@/components/store/OrderSuccessPage';
 import { LoginPage, RegisterPage } from '@/components/store/AuthPages';
 import { AccountPage } from '@/components/store/AccountPage';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
+import { WishlistPage } from '@/components/store/WishlistPage';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -112,6 +113,7 @@ export default function Home() {
       case 'login': return <LoginPage />;
       case 'register': return <RegisterPage />;
       case 'account': return <AccountPage />;
+      case 'wishlist': return <WishlistPage />;
       case 'admin': return <AdminDashboard />;
       default: return <HomePage />;
     }
