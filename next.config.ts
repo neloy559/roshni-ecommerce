@@ -6,6 +6,7 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
+  devIndicators: false,
   allowedDevOrigins: ["21.0.9.209"],
 };
 
