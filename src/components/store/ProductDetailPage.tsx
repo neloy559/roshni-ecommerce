@@ -209,7 +209,7 @@ export function ProductDetailPage() {
     if (!product) return;
     const variant = selectedVariant ? product.variants.find(v => v.id === selectedVariant) : null;
     addToCart({
-      id: `cart-${Date.now()}`,
+      id: crypto.randomUUID(),
       productId: product.id,
       variantId: selectedVariant,
       quantity,
@@ -442,9 +442,9 @@ export function ProductDetailPage() {
               <motion.span
                 key={currentPrice}
                 className="text-2xl sm:text-3xl font-bold text-primary"
-                initial={priceAnimating ? { y: 10, opacity: 0 } : false}
+                initial={priceAnimating ? { y: 10, opacity: 0 } : undefined}
                 animate={{ y: 0, opacity: 1 }}
-                exit={priceAnimating ? { y: -10, opacity: 0 } : false}
+                exit={priceAnimating ? { y: -10, opacity: 0 } : undefined}
                 transition={{ duration: 0.25 }}
               >
                 ৳{currentPrice.toLocaleString()}

@@ -1,7 +1,11 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin, isAuthResponse } from '@/lib/auth-api';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (isAuthResponse(auth)) return auth;
+
   try {
     const banners = await db.banner.findMany({ orderBy: { order: 'asc' } });
     return NextResponse.json(banners);
@@ -11,11 +15,17 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (isAuthResponse(auth)) return auth;
+
   try {
     const body = await req.json();
     const { image, linkTarget, title, subtitle, order, isActive } = body;
     const banner = await db.banner.create({
-      data: { image, linkTarget: linkTarget || '', title: title || '', subtitle: subtitle || '', order: order || 0, isActive: isActive !== false },
+      data: {
+        image, linkTarget: linkTarget || '', title: title || '', subtitle: subtitle || '',
+        order: order || 0, isActive: isActive !== false,
+      },
     });
     return NextResponse.json({ success: true, banner });
   } catch {
@@ -24,6 +34,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (isAuthResponse(auth)) return auth;
+
   try {
     const body = await req.json();
     const { id, image, linkTarget, title, subtitle, order, isActive } = body;
@@ -38,6 +51,9 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (isAuthResponse(auth)) return auth;
+
   try {
     const { searchParams } = new URL(req.url);
     await db.banner.delete({ where: { id: searchParams.get('id')! } });

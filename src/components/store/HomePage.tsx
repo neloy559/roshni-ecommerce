@@ -37,7 +37,7 @@ function ProductCard({ product }: { product: Product }) {
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     addToCart({
-      id: `cart-${Date.now()}`, productId: product.id, variantId: null, quantity: 1,
+      id: crypto.randomUUID(), productId: product.id, variantId: null, quantity: 1,
       name: product.name, slug: product.slug, image: product.images[0],
       price: product.effectivePrice, originalPrice: product.price,
       hasDiscount: product.hasDiscount, variant: null, stock: 99,
@@ -691,4 +691,5 @@ export function HomePage() {
   );
 }
 
+export type { Product };
 export { ProductCard, ProductCardSkeleton };

@@ -169,12 +169,11 @@ function ProcessingOverlay() {
 }
 
 export function CheckoutPage() {
-  const { cartItems, cartSubtotal, clearCart, user, navigate, setLastOrderNumber } = useAppStore();
+  const { cartItems, cartSubtotal, clearCart, user, navigate, setLastOrderNumber, promoDiscount } = useAppStore();
   const [step, setStep] = useState<'address' | 'payment' | 'review' | 'processing'>('address');
   const [paymentMethod, setPaymentMethod] = useState<'bkash' | 'nagad'>('bkash');
   const [loading, setLoading] = useState(false);
-  const [shippingCost] = useState(cartSubtotal >= 5000 ? 0 : 120);
-  const [promoDiscount] = useState(0);
+  const shippingCost = cartSubtotal >= 5000 ? 0 : 120;
   const [saveAddress, setSaveAddress] = useState(true);
   const [selectedAddressIdx, setSelectedAddressIdx] = useState(-1);
 

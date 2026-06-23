@@ -187,12 +187,12 @@ export function Footer() {
               </h3>
               <ul className="space-y-2.5">
                 {[
-                  { label: 'Shoes', params: { category: 'shoes' } },
-                  { label: 'Handbags', params: { category: 'handbags' } },
-                  { label: 'Accessories', params: { category: 'accessories' } },
-                  { label: 'New Arrivals', params: { sort: 'newest' } },
-                  { label: 'Best Sellers', params: { sort: 'popular' } },
-                  { label: 'Sale', params: { sale: 'true' } },
+                  { label: 'Shoes', params: { category: 'shoes' } as Record<string, string> },
+                  { label: 'Handbags', params: { category: 'handbags' } as Record<string, string> },
+                  { label: 'Accessories', params: { category: 'accessories' } as Record<string, string> },
+                  { label: 'New Arrivals', params: { sort: 'newest' } as Record<string, string> },
+                  { label: 'Best Sellers', params: { sort: 'popular' } as Record<string, string> },
+                  { label: 'Sale', params: { sale: 'true' } as Record<string, string> },
                 ].map((link) => (
                   <li key={link.label}>
                     <button

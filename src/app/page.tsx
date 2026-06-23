@@ -19,6 +19,7 @@ import { AccountPage } from '@/components/store/AccountPage';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { WishlistPage } from '@/components/store/WishlistPage';
 import { WhatsAppButton } from '@/components/store/WhatsAppButton';
+import { ChatWidget } from '@/components/store/ChatWidget';
 
 function PageLoader() {
   const currentPage = useAppStore((s) => s.currentPage);
@@ -61,7 +62,7 @@ const pageVariants = {
   exit: { opacity: 0, y: -12 },
 };
 
-const SPRING_CONFIG: Spring = { type: 'spring', stiffness: 350, damping: 25 };
+const SPRING_CONFIG = { type: 'spring' as const, stiffness: 350, damping: 25 };
 const SVG_SIZE = 44;
 const STROKE_WIDTH = 2.5;
 const RADIUS = (SVG_SIZE - STROKE_WIDTH) / 2;
@@ -194,8 +195,16 @@ function ToastContainer() {
 }
 
 export default function Home() {
-  const { currentPage } = useAppStore();
+  const { currentPage, setUser, addToast } = useAppStore();
   const isAdmin = currentPage.startsWith('admin');
+
+  // Hydrate user session from httpOnly cookie on mount
+  useEffect(() => {
+    fetch('/api/auth')
+      .then(r => r.json())
+      .then(data => { if (data?.user) setUser(data.user); })
+      .catch(() => { /* no session */ });
+  }, []);
 
   const renderPage = () => {
     switch (currentPage) {
@@ -234,6 +243,7 @@ export default function Home() {
       {!isAdmin && <Footer />}
       {!isAdmin && <CartDrawer />}
       {!isAdmin && <CookieConsent />}
+      {!isAdmin && <ChatWidget />}
       {!isAdmin && <WhatsAppButton />}
       <BackToTop />
       <ToastContainer />

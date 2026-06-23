@@ -1,12 +1,19 @@
 import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin, isAuthResponse } from '@/lib/auth-api';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const auth = await requireAdmin(req);
+  if (isAuthResponse(auth)) return auth;
+
   try {
     const totalProducts = await db.product.count();
     const totalOrders = await db.order.count();
     const totalUsers = await db.user.count({ where: { role: 'customer' } });
-    const completedOrders = await db.order.findMany({ where: { paymentStatus: 'completed' }, select: { total: true } });
+    const completedOrders = await db.order.findMany({
+      where: { paymentStatus: 'completed' },
+      select: { total: true },
+    });
     const totalRevenue = completedOrders.reduce((s, o) => s + o.total, 0);
     const pendingOrders = await db.order.count({ where: { status: 'pending' } });
     const lowStock = await db.product.count({ where: { stock: { lte: 5, gt: 0 } } });
