@@ -1,0 +1,134 @@
+{
+  "passed": [
+    {
+      "name": "Homepage loads successfully",
+      "status": "PASS",
+      "details": "URL: https://roshni-ecommerce.vercel.app",
+      "timestamp": "2026-06-23T08:19:39.346Z"
+    },
+    {
+      "name": "Homepage screenshot captured",
+      "status": "PASS",
+      "details": "Saved to test-screenshots/homepage.png",
+      "timestamp": "2026-06-23T08:19:49.666Z"
+    },
+    {
+      "name": "Navigate to products page",
+      "status": "PASS",
+      "details": "Via store navigation",
+      "timestamp": "2026-06-23T08:19:52.969Z"
+    },
+    {
+      "name": "Products page screenshot captured",
+      "status": "PASS",
+      "details": "",
+      "timestamp": "2026-06-23T08:19:53.017Z"
+    },
+    {
+      "name": "Responsive: Mobile (375x667)",
+      "status": "PASS",
+      "details": "Screenshot: test-screenshots/responsive-375x667.png",
+      "timestamp": "2026-06-23T08:19:59.641Z"
+    },
+    {
+      "name": "Responsive: Tablet (768x1024)",
+      "status": "PASS",
+      "details": "Screenshot: test-screenshots/responsive-768x1024.png",
+      "timestamp": "2026-06-23T08:20:01.913Z"
+    },
+    {
+      "name": "Responsive: Desktop (1920x1080)",
+      "status": "PASS",
+      "details": "Screenshot: test-screenshots/responsive-1920x1080.png",
+      "timestamp": "2026-06-23T08:20:04.215Z"
+    },
+    {
+      "name": "Page load time",
+      "status": "PASS",
+      "details": "137ms (< 3s)",
+      "timestamp": "2026-06-23T08:20:04.354Z"
+    }
+  ],
+  "failed": [
+    {
+      "name": "Page title correct",
+      "status": "FAIL",
+      "details": "Expected \"Roshni\" in title, got: ",
+      "timestamp": "2026-06-23T08:19:39.568Z"
+    },
+    {
+      "name": "Header element present",
+      "status": "FAIL",
+      "details": "Header not found",
+      "timestamp": "2026-06-23T08:19:44.598Z"
+    },
+    {
+      "name": "Footer element present",
+      "status": "FAIL",
+      "details": "Footer not found",
+      "timestamp": "2026-06-23T08:19:49.611Z"
+    },
+    {
+      "name": "Cart icon visible",
+      "status": "FAIL",
+      "details": "Cart icon not found",
+      "timestamp": "2026-06-23T08:19:53.020Z"
+    }
+  ],
+  "warnings": [
+    {
+      "name": "Hero section visible",
+      "status": "WARN",
+      "details": "Hero section not immediately visible",
+      "timestamp": "2026-06-23T08:19:49.620Z"
+    },
+    {
+      "name": "Product cards visible",
+      "status": "WARN",
+      "details": "No products found - may need seeding",
+      "timestamp": "2026-06-23T08:19:52.983Z"
+    },
+    {
+      "name": "Login page accessible",
+      "status": "WARN",
+      "details": "Login link not found on homepage",
+      "timestamp": "2026-06-23T08:19:55.694Z"
+    },
+    {
+      "name": "API root endpoint",
+      "status": "WARN",
+      "details": "Status: 502",
+      "timestamp": "2026-06-23T08:19:56.242Z"
+    },
+    {
+      "name": "Products API endpoint",
+      "status": "WARN",
+      "details": "Status: 502",
+      "timestamp": "2026-06-23T08:19:56.728Z"
+    },
+    {
+      "name": "Categories API endpoint",
+      "status": "WARN",
+      "details": "Status: 502",
+      "timestamp": "2026-06-23T08:19:57.020Z"
+    },
+    {
+      "name": "Banners API endpoint",
+      "status": "WARN",
+      "details": "Status: 502",
+      "timestamp": "2026-06-23T08:19:57.303Z"
+    },
+    {
+      "name": "No console errors",
+      "status": "WARN",
+      "details": "5 errors found",
+      "timestamp": "2026-06-23T08:20:07.370Z"
+    },
+    {
+      "name": "Dark mode toggle",
+      "status": "WARN",
+      "details": "Dark mode toggle not found",
+      "timestamp": "2026-06-23T08:20:08.592Z"
+    }
+  ]
+}
