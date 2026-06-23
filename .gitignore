@@ -1,14 +1,7 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 node_modules
 /.pnp
 .pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
 
 # testing
 /coverage
@@ -24,18 +17,20 @@ node_modules
 .DS_Store
 *.pem
 
-# debug
+# debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.log
+dev.log
+server.log
 
-# env files (can opt-in for committing if needed)
-.env*
-
-# vercel
-.vercel
-
+# environment
+.env
+.env.local
+.env.production.local
+.env.development.local
 
 # typescript
 *.tsbuildinfo
@@ -43,57 +38,16 @@ next-env.d.ts
 
 # Local development
 local-*
-.claude
-.z-ai-config
-*.log
-dev.log
-dev.out.log
-server.log
-test
-prompt
+*.history
 
-# Skills directory
-/skills/
+# IDE
+.idea/
+*.swp
+*.swo
 
-# Agent context (development notes)
-/agent-ctx/
-
-# QA screenshots and downloads
-/download/
-qa-*.png
-screenshot-*.png
-
-# Tool results
-/tool-results/
-
-# Upload folder
-/upload/
-
-# Scripts
-.zscripts/
-*.sh
-
-# Database
+# Database (SQLite - not used in production)
 /db/*.db
 /db/*.db-journal
 
-# Archives
-*.tar
-*.tar.gz
-*.zip
-
-# Worklog
-worklog.md
-
-# Examples
-/examples/
-
-# Mini services
-/mini-services/
-
-# Caddy
-Caddyfile
-
-# Seed data
-seed.ts
+# Configuration
 .vercel

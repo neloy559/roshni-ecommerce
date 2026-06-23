@@ -1,38 +1,41 @@
 import { db } from './src/lib/db';
 import { hash } from 'bcryptjs';
 
+// Cloudinary-optimized image URLs (auto format + quality)
+const C = "https://res.cloudinary.com/dwheha9pb/image/upload/f_auto,q_auto";
+
 const SHOE_IMAGES = [
-  "https://sfile.chatglm.cn/images-ppt/26db86ee5f57.png",
-  "https://sfile.chatglm.cn/images-ppt/a0490d9780a2.jpg",
-  "https://sfile.chatglm.cn/images-ppt/0e221ea461ad.jpg",
-  "https://sfile.chatglm.cn/images-ppt/6644952f5d4e.jpg",
-  "https://sfile.chatglm.cn/images-ppt/0db449c54646.jpg",
-  "https://sfile.chatglm.cn/images-ppt/e8f006b4fce7.jpg",
+  `${C}/v1782219939/roshni/products/shoes/roshni/products/shoes/26db86ee5f57`,
+  `${C}/v1782219942/roshni/products/shoes/roshni/products/shoes/a0490d9780a2`,
+  `${C}/v1782219946/roshni/products/shoes/roshni/products/shoes/0e221ea461ad`,
+  `${C}/v1782219949/roshni/products/shoes/roshni/products/shoes/6644952f5d4e`,
+  `${C}/v1782219952/roshni/products/shoes/roshni/products/shoes/0db449c54646`,
+  `${C}/v1782219955/roshni/products/shoes/roshni/products/shoes/e8f006b4fce7`,
 ];
 
 const BAG_IMAGES = [
-  "https://sfile.chatglm.cn/images-ppt/fd76ca060f26.jpeg",
-  "https://sfile.chatglm.cn/images-ppt/feb8e60ce1bd.jpeg",
-  "https://sfile.chatglm.cn/images-ppt/e58d18e29fe6.jpg",
-  "https://sfile.chatglm.cn/images-ppt/0d6395d212ee.png",
-  "https://sfile.chatglm.cn/images-ppt/88d000320807.png",
-  "https://sfile.chatglm.cn/images-ppt/45407a4717ad.jpg",
+  `${C}/v1782219959/roshni/products/bags/roshni/products/bags/fd76ca060f26`,
+  `${C}/v1782219967/roshni/products/bags/roshni/products/bags/feb8e60ce1bd`,
+  `${C}/v1782219972/roshni/products/bags/roshni/products/bags/e58d18e29fe6`,
+  `${C}/v1782219975/roshni/products/bags/roshni/products/bags/0d6395d212ee`,
+  `${C}/v1782219979/roshni/products/bags/roshni/products/bags/88d000320807`,
+  `${C}/v1782219983/roshni/products/bags/roshni/products/bags/45407a4717ad`,
 ];
 
 const ACCESSORY_IMAGES = [
-  "https://sfile.chatglm.cn/images-ppt/a65c3442423c.jpg",
-  "https://sfile.chatglm.cn/images-ppt/502ba51339f0.jpg",
-  "https://sfile.chatglm.cn/images-ppt/2aaed63dd38f.jpg",
-  "https://sfile.chatglm.cn/images-ppt/dfe81ca5f173.jpg",
-  "https://sfile.chatglm.cn/images-ppt/aae7a971ddb4.jpg",
-  "https://sfile.chatglm.cn/images-ppt/618d3b5e6187.jpg",
+  `${C}/v1782219988/roshni/products/accessories/roshni/products/accessories/a65c3442423c`,
+  `${C}/v1782219991/roshni/products/accessories/roshni/products/accessories/502ba51339f0`,
+  `${C}/v1782219995/roshni/products/accessories/roshni/products/accessories/2aaed63dd38f`,
+  `${C}/v1782219998/roshni/products/accessories/roshni/products/accessories/dfe81ca5f173`,
+  `${C}/v1782220001/roshni/products/accessories/roshni/products/accessories/aae7a971ddb4`,
+  `${C}/v1782220004/roshni/products/accessories/roshni/products/accessories/618d3b5e6187`,
 ];
 
 const BANNER_IMAGES = [
-  "https://sfile.chatglm.cn/images-ppt/f97f8dc22c20.jpg",
-  "https://sfile.chatglm.cn/images-ppt/08e1a3375306.png",
-  "https://sfile.chatglm.cn/images-ppt/8aa77811abe7.jpg",
-  "https://sfile.chatglm.cn/images-ppt/05297c04e4da.jpg",
+  `${C}/v1782220007/roshni/products/banners/roshni/products/banners/f97f8dc22c20`,
+  `${C}/v1782220011/roshni/products/banners/roshni/products/banners/08e1a3375306`,
+  `${C}/v1782220014/roshni/products/banners/roshni/products/banners/8aa77811abe7`,
+  `${C}/v1782220018/roshni/products/banners/roshni/products/banners/05297c04e4da`,
 ];
 
 async function seed() {

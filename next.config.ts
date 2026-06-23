@@ -7,7 +7,14 @@ const nextConfig: NextConfig = {
   },
   reactStrictMode: false,
   devIndicators: false,
-  allowedDevOrigins: ["21.0.9.209"],
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
+    ],
+  },
 };
 
 export default nextConfig;
