@@ -40,15 +40,59 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local development
 local-*
 .claude
 .z-ai-config
 *.log
 dev.log
 dev.out.log
+server.log
 test
 prompt
 
-server.log
 # Skills directory
 /skills/
+
+# Agent context (development notes)
+/agent-ctx/
+
+# QA screenshots and downloads
+/download/
+qa-*.png
+screenshot-*.png
+
+# Tool results
+/tool-results/
+
+# Upload folder
+/upload/
+
+# Scripts
+.zscripts/
+*.sh
+
+# Database
+/db/*.db
+/db/*.db-journal
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+
+# Worklog
+worklog.md
+
+# Examples
+/examples/
+
+# Mini services
+/mini-services/
+
+# Caddy
+Caddyfile
+
+# Seed data
+seed.ts
