@@ -102,7 +102,7 @@ export function Header() {
 
   // Fetch categories
   useEffect(() => {
-    fetch(getApiUrl('/api/categories')
+    fetch(getApiUrl('/api/categories'))
       .then((r) => r.json())
       .then((data: Category[]) => setCategories(data))
       .catch(() => {});
@@ -131,7 +131,7 @@ export function Header() {
     setSearchLoading(true);
     searchDebounceRef.current = setTimeout(async () => {
       try {
-        const res = await fetch(getApiUrl(`/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`);
+        const res = await fetch(getApiUrl(`/api/products?search=${encodeURIComponent(searchQuery.trim())}&limit=6`));
         const data = await res.json();
         const products: SearchResult[] = (data.products || []).map((p: Record<string, unknown>) => ({
           ...p,

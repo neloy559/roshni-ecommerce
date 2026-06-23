@@ -106,7 +106,7 @@ export function AccountPage() {
       return;
     }
     if (user.id) {
-      fetch(getApiUrl(`/api/orders?userId=${user.id}`)
+      fetch(getApiUrl(`/api/orders?userId=${user.id}`))
         .then((r) => r.json())
         .then((d) => {
           setOrders(d.orders || []);
@@ -120,7 +120,7 @@ export function AccountPage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const res = await fetch(getApiUrl('/api/auth', {
+      const res = await fetch(getApiUrl('/api/auth'), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, name, phone, email }),
@@ -172,7 +172,7 @@ export function AccountPage() {
       updated = [...user.addresses, newAddr];
     }
 
-    fetch(getApiUrl('/api/auth', {
+    fetch(getApiUrl('/api/auth'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, addresses: updated }),
@@ -189,7 +189,7 @@ export function AccountPage() {
 
   const handleDeleteAddress = (addrId: string) => {
     const updated = user.addresses.filter((a) => a.id !== addrId);
-    fetch(getApiUrl('/api/auth', {
+    fetch(getApiUrl('/api/auth'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, addresses: updated }),
@@ -208,7 +208,7 @@ export function AccountPage() {
       ...a,
       isDefault: a.id === addrId,
     }));
-    fetch(getApiUrl('/api/auth', {
+    fetch(getApiUrl('/api/auth'), {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ userId: user.id, addresses: updated }),

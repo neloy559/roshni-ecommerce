@@ -149,7 +149,7 @@ export function ProductDetailPage() {
     const slug = pageParams.slug;
     if (!slug) { navigate('products'); return; }
 
-    fetch(getApiUrl(`/api/products/${slug}`).then(r => r.json()).then(data => {
+    fetch(getApiUrl(`/api/products/${slug}`)).then(r => r.json()).then(data => {
       if (cancelled) return;
       setProduct(data.product);
       setRelated(data.related || []);

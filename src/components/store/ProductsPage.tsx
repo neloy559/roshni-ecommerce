@@ -542,7 +542,7 @@ export function ProductsPage() {
       params.set('limit', '50');
 
       try {
-        const res = await fetch(getApiUrl(`/api/products?${params}`, { signal: controller.signal });
+        const res = await fetch(getApiUrl(`/api/products?${params}`), { signal: controller.signal });
         const data = await res.json();
         if (!cancelled) {
           setProducts(data.products || []);
@@ -561,7 +561,7 @@ export function ProductsPage() {
   // Fetch categories
   useEffect(() => {
     let cancelled = false;
-    fetch(getApiUrl('/api/categories')
+    fetch(getApiUrl('/api/categories'))
       .then(r => r.json())
       .then(d => { if (!cancelled) setCategories(d); })
       .catch(() => {});

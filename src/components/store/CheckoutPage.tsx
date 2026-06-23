@@ -246,7 +246,7 @@ export function CheckoutPage() {
         image: item.image,
       }));
 
-      const res = await fetch(getApiUrl('/api/orders', {
+      const res = await fetch(getApiUrl('/api/orders'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

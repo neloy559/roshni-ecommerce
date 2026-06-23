@@ -220,7 +220,7 @@ export function WishlistPage() {
 
     const fetchWishlist = async () => {
       try {
-        const res = await fetch(getApiUrl('/api/products?limit=100');
+        const res = await fetch(getApiUrl('/api/products?limit=100'));
         const data = await res.json();
         const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => ({
           ...p,
@@ -246,7 +246,7 @@ export function WishlistPage() {
     if (recentlyViewed.length === 0) return;
     const fetchRecent = async () => {
       try {
-        const res = await fetch(getApiUrl('/api/products?limit=100');
+        const res = await fetch(getApiUrl('/api/products?limit=100'));
         const data = await res.json();
         const allProducts: Product[] = (data.products || []).map((p: Record<string, unknown>) => ({
           ...p,

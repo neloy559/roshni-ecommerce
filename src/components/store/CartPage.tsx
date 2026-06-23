@@ -34,7 +34,7 @@ export function CartPage() {
     setPromoLoading(true);
     setPromoError('');
     try {
-      const res = await fetch(getApiUrl('/api/promo', {
+      const res = await fetch(getApiUrl('/api/promo'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: promoCode, subtotal: cartSubtotal }),
