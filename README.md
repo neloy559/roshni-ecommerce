@@ -33,6 +33,17 @@ A premium e-commerce platform for the Bangladesh market specializing in women's 
 
 ---
 
+## Screenshots
+
+| | | |
+|---|---|---|
+| ![Homepage](public/screenshots/homepage.png) | ![Products](public/screenshots/products.png) | ![Cart](public/screenshots/cart.png) |
+| Home Page | Product Listing (Shoes) | Shopping Cart |
+| ![Admin Dashboard](public/screenshots/admin.png) | ![Product Detail](public/screenshots/product-detail.png) | |
+| Admin Dashboard | Product Detail Page | |
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
